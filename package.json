@@ -1,0 +1,39 @@
+{
+  "name": "open-glean",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-sdk/rds-signer": "^3.1121.0",
+    "@hydradb/sdk": "^2.1.2",
+    "@phosphor-icons/react": "^2.1.10",
+    "clsx": "^2.1.1",
+    "d3-force": "^3.0.0",
+    "framer-motion": "^13.1.1",
+    "mongodb": "^7.6.0",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-force-graph-2d": "^1.29.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^24.13.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.1"
+  }
+}

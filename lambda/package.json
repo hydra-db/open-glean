@@ -1,0 +1,11 @@
+{
+  "name": "open-glean-mongodb-proxy",
+  "version": "1.0.0",
+  "description": "AWS Lambda proxy that lets Open Glean reach a DocumentDB cluster over HTTPS.",
+  "main": "handler.mjs",
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "mongodb": "^7.6.0"
+  }
+}
