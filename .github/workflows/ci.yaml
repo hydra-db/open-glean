@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Lint must pass. It is at zero errors, so any new error fails CI.
+      # Warnings are allowed (they do not exit non-zero).
+      - name: Lint
+        run: npm run lint
+
+      # Fails on a HIGH or CRITICAL advisory only, so a moderate advisory in a
+      # transitive dependency cannot block an unrelated fix.
+      - name: Audit
+        run: npm audit --audit-level=high

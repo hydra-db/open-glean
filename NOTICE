@@ -1,0 +1,35 @@
+Open Glean
+Copyright 2026 HydraDB
+
+This product includes software developed at HydraDB.
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+================================================================================
+Third-party trademarks
+================================================================================
+
+The Apache License grants rights to this source code. Section 6 grants no
+trademark rights. The files below are not covered by that grant:
+
+  public/static/images/logos/connectors/**
+  public/static/images/logos/google.svg
+
+These are the logos of the services Open Glean connects to. Each logo belongs to
+its owner, including Salesforce, Slack, Stripe, GitHub, Atlassian, Notion,
+Zendesk, HubSpot, Okta, Datadog, Figma, Workday, Twilio, Google, LinkedIn,
+Zoom and Microsoft.
+
+The logos identify a real integration. Nothing here transfers any right in
+them, and a fork does not gain permission to use them. Some owners publish
+brand guidelines that limit how you can show their logo. If you redistribute a
+modified Open Glean, read those guidelines or replace the logos.
+
+================================================================================
+Fonts
+================================================================================
+
+Open Glean uses Inter (SIL Open Font License 1.1) as its UI font, loaded at runtime
+via next/font/google. No font binaries are distributed with this repository.
+The monospace stack (ui-monospace, "Geist Mono", monospace) references system
+and Google Font families; the app falls back to the system monospace font when
+Geist Mono is unavailable. No commercial typefaces are included.
