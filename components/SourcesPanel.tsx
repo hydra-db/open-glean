@@ -337,7 +337,7 @@ export default function SourcesPanel({
         {truncate(w.title ?? w.url, 90)}
       </span>
       <span className="flex w-full items-center gap-1.5 text-[11px] text-text-2">
-        <Icon name="globe" size={13} className="shrink-0 text-brand-1" />
+        <Icon name="globe" size={13} className="shrink-0 text-text-2" />
         <span className="min-w-0 truncate">{hostname(w.url)}</span>
         <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-solid border-stroke-1 bg-surface-3 text-[10px] font-semibold text-text-1">
           {w.ref}
@@ -357,10 +357,10 @@ export default function SourcesPanel({
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="group/src mb-1.5 flex w-full items-center gap-1.5 rounded-md text-left transition-colors hover:text-brand-1"
+        className="group/src mb-1.5 flex w-full items-center gap-1.5 rounded-md text-left transition-colors hover:text-text-3"
       >
-        <Icon name="layers" size={14} className="text-brand-1" />
-        <span className="text-xs font-medium text-text-1 group-hover/src:text-brand-1">
+        <Icon name="layers" size={14} className="text-text-2" />
+        <span className="text-xs font-medium text-text-1 group-hover/src:text-text-3">
           {total} source{total === 1 ? "" : "s"}
         </span>
         <Icon
@@ -401,7 +401,7 @@ export default function SourcesPanel({
           <div className="animate-slideInRight absolute right-0 top-0 flex h-full w-full max-w-[340px] flex-col border-l border-solid border-stroke-1 bg-surface-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-solid border-stroke-1 px-4 py-3.5">
               <p className="flex items-center gap-1.5 text-sm font-medium text-text-1">
-                <Icon name="layers" size={15} className="text-brand-1" />
+                <Icon name="layers" size={15} className="text-text-2" />
                 {/* These are retrieved sources — documents, connector records
                     and web results — not the memory bucket specifically. */}
                 {total} {total === 1 ? "source" : "sources"}
@@ -453,7 +453,7 @@ export default function SourcesPanel({
                     {truncate(w.title ?? w.url, 120)}
                   </span>
                   <span className="flex w-full items-center gap-1.5 text-[11px] text-text-2">
-                    <Icon name="globe" size={13} className="shrink-0 text-brand-1" />
+                    <Icon name="globe" size={13} className="shrink-0 text-text-2" />
                     <span className="min-w-0 truncate">{hostname(w.url)}</span>
                     <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-solid border-stroke-1 bg-surface-4 text-[10px] font-semibold text-text-1">
                       {w.ref}
@@ -513,7 +513,7 @@ export default function SourcesPanel({
                 <button
                   type="button"
                   onClick={() => setShowFull((v) => !v)}
-                  className="ml-auto text-[11px] font-medium text-accent transition-colors hover:text-accent-2"
+                  className="ml-auto text-[11px] font-medium text-text-1 transition-colors hover:text-text-3"
                 >
                   {showFull ? "Show cited passage" : "Show full source"}
                 </button>

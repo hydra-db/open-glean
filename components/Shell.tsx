@@ -16,14 +16,26 @@ import { Icon } from "@/components/Icon";
 import { ConnectGate } from "@/components/ConnectGate";
 import { ScopeSwitcher } from "@/components/ScopeSwitcher";
 import { SaveStatusBanner } from "@/components/SaveStatusBanner";
+import { Home } from "pixelarticons/react/Home";
+import { MessageText } from "pixelarticons/react/MessageText";
+import { Database } from "pixelarticons/react/Database";
+import { GitBranch } from "pixelarticons/react/GitBranch";
+import { PlugSolid } from "pixelarticons/react/PlugSolid";
+import { SettingsCog } from "pixelarticons/react/SettingsCog";
+import { Upload } from "pixelarticons/react/Upload";
 
-export const NAV_ITEMS = [
-  { href: "/ask", label: "Home", icon: "home", match: ["/ask"] },
-  { href: "/chat-history", label: "Chats", icon: "history", match: ["/chat-history", "/chat"] },
-  { href: "/context", label: "Context", icon: "layers", match: ["/context"] },
-  { href: "/mindmap", label: "Mindmap", icon: "graph", match: ["/mindmap"] },
-  { href: "/integrations", label: "Integrations", icon: "plug", match: ["/integrations"] },
-  { href: "/settings", label: "Settings", icon: "settings", match: ["/settings"] },
+type PixelIcon = (props: React.SVGProps<SVGSVGElement>) => React.JSX.Element;
+
+// Pixel-art icons (pixelarticons, MIT) to match the Geist Pixel type. They
+// are drawn on a 24px grid, so they render at 24px or a multiple to stay
+// crisp.
+export const NAV_ITEMS: { href: string; label: string; icon: PixelIcon; match: string[] }[] = [
+  { href: "/ask", label: "Home", icon: Home, match: ["/ask"] },
+  { href: "/chat-history", label: "Chats", icon: MessageText, match: ["/chat-history", "/chat"] },
+  { href: "/context", label: "Context", icon: Database, match: ["/context"] },
+  { href: "/mindmap", label: "Mindmap", icon: GitBranch, match: ["/mindmap"] },
+  { href: "/integrations", label: "Integrations", icon: PlugSolid, match: ["/integrations"] },
+  { href: "/settings", label: "Settings", icon: SettingsCog, match: ["/settings"] },
 ];
 
 export default function Shell({ children }: { children: ReactNode }) {
@@ -111,19 +123,13 @@ export default function Shell({ children }: { children: ReactNode }) {
             <span
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-x-0 rounded-lg bg-surface-8",
+                "pointer-events-none absolute inset-x-0 rounded-lg bg-white/[0.07]",
                 navInd.height === 0 ? "opacity-0" : "opacity-100",
                 navReady && "transition-all duration-200 ease-out",
               )}
               style={{ top: navInd.top, height: navInd.height }}
             />
-            <RailLink
-              href="/context"
-              label="Upload context"
-              icon="upload"
-              active={active === "/context"}
-              pill
-            />
+            <AddContextButton />
             <div className="my-2 h-px w-full shrink-0 bg-stroke-1" />
             {NAV_ITEMS.map((item) => (
               <RailLink
@@ -204,7 +210,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               active === item.href ? "text-brand-1" : "text-text-2",
             )}
           >
-            <Icon name={item.icon} size={18} />
+            <item.icon width={20} height={20} aria-hidden />
             {item.label}
           </Link>
         ))}
@@ -213,19 +219,42 @@ export default function Shell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The rail's primary action. It opens the add-context dialog directly rather
+ * than landing on the Context list, since adding is why someone clicks it.
+ * Collapsed it is a solid square; expanded it reads "Add context" with the
+ * kinds of thing that can be added.
+ */
+function AddContextButton() {
+  return (
+    <Link
+      href="/context?add=1"
+      title="Add context"
+      className="group/add relative z-10 mb-1 flex h-11 w-full shrink-0 items-center overflow-hidden rounded-lg bg-text-1 text-[#0a0a0b] transition-colors hover:bg-text-3"
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+        <Upload width={20} height={20} aria-hidden className="transition-transform duration-200 group-hover/add:-translate-y-0.5" />
+      </span>
+      <span className="rail-label pointer-events-none hidden min-w-0 leading-tight">
+        <span className="block whitespace-nowrap text-sm font-medium">Add context</span>
+        <span className="block whitespace-nowrap text-[11px] text-[#0a0a0b]/60">Files, notes, links</span>
+      </span>
+      <span className="sr-only">Add context</span>
+    </Link>
+  );
+}
+
 function RailLink({
   href,
   label,
-  icon,
+  icon: IconCmp,
   active,
-  pill = false,
   linkRef,
 }: {
   href: string;
   label: string;
-  icon: string;
+  icon: PixelIcon;
   active: boolean;
-  pill?: boolean;
   linkRef?: (el: HTMLAnchorElement | null) => void;
 }) {
   return (
@@ -238,23 +267,20 @@ function RailLink({
         // One 44px-tall row. The icon lives in a fixed 44px box so it stays put
         // as the rail expands and the label appears beside it on the same line.
         // The active fill is a shared sliding indicator behind the links, so the
-        // link itself only sets text colour and the accent bar.
-        "rail-link group/link relative z-10 flex h-11 w-full shrink-0 items-center rounded-lg bg-transparent text-text-2 transition-colors",
-        pill
-          ? "mb-1 border border-solid border-stroke-1 bg-surface-4 text-text-1 hover:border-stroke-2 hover:bg-surface-7"
-          : "hover:text-text-1",
-        // Hover fill only on the inactive items; the active one already has the
-        // sliding indicator behind it.
-        !pill && !active && "hover:bg-surface-7/60",
-        active && !pill && "text-text-1",
+        // link itself only sets colours.
+        "rail-link group/link relative z-10 flex h-11 w-full shrink-0 items-center rounded-lg bg-transparent text-fg-4 transition-colors",
+        active ? "text-text-3" : "hover:bg-white/[0.04] hover:text-text-1",
       )}
     >
-      {/* Accent left-edge marks the active page. */}
-      {active && !pill && (
-        <span className="absolute left-0 top-1/2 z-10 h-5 w-[3px] -translate-y-1/2 rounded-full bg-brand-1" />
-      )}
       <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-        <Icon name={icon} size={19} className="shrink-0" />
+        {/* The active page's icon takes the brand colour, so the current page
+            reads at a glance without an extra marker. */}
+        <IconCmp
+          width={24}
+          height={24}
+          aria-hidden
+          className={cn("shrink-0 transition-colors", active && "text-brand-1")}
+        />
       </span>
       <span className="rail-label pointer-events-none hidden whitespace-nowrap text-sm font-medium">
         {label}
