@@ -3,8 +3,8 @@
 /**
  * Ask / Search, the home page.
  *
- * A centred greeting, the search composer, and suggested prompts, over a quiet
- * dotted grid and a soft accent glow.
+ * A centred greeting, the search composer, and suggested prompts, on a flat
+ * obsidian canvas.
  */
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -34,8 +34,6 @@ export default function AskPage() {
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto px-4 py-8">
-      <div aria-hidden className="hero-grid" />
-      <div aria-hidden className="hero-glow" />
       <div className="relative w-full max-w-[680px]">
         <AskSearchBar onSubmit={onSubmit} />
       </div>

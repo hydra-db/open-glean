@@ -59,7 +59,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={clearAndReload}
-            style={btnStyle("#ff571a", "#140a03")}
+            style={btnStyle("#ececec", "#0a0a0b")}
           >
             Reset local data
           </button>

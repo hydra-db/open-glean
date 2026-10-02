@@ -1043,7 +1043,7 @@ function MemoryCardView({
   // detail, and the Copy/Delete actions are siblings, so no interactive element
   // is nested inside another.
   return (
-    <div className="card group flex flex-col gap-2.5 p-4 transition-colors hover:border-accent-line hover:bg-bg-2">
+    <div className="card group flex flex-col gap-2.5 p-4 transition-colors hover:border-stroke-3 hover:bg-bg-2">
       <button
         type="button"
         onClick={() => onOpen(card)}
@@ -1098,7 +1098,7 @@ function KnowledgeCardView({
   onDelete: () => void;
 }) {
   return (
-    <div className="card group flex flex-col gap-2.5 p-4 transition-colors hover:border-accent-line hover:bg-bg-2">
+    <div className="card group flex flex-col gap-2.5 p-4 transition-colors hover:border-stroke-3 hover:bg-bg-2">
       <button
         type="button"
         onClick={() => onView(card)}

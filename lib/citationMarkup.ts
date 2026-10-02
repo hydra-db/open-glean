@@ -16,7 +16,7 @@
 
 /** Class applied to a resolved citation marker. */
 const CITE_CLS =
-  "cursor-pointer rounded-sm px-0.5 font-medium text-accent hover:bg-accent-tint";
+  "cursor-pointer rounded-sm px-0.5 font-medium text-text-3 hover:bg-white/10";
 
 /**
  * @param html   answer HTML, already escaped and inline-rendered
