@@ -34,11 +34,22 @@
  *     `url_citation: { url, title }`) — OpenRouter web plugin
  *   - `choices[0].message.citations[]` ({ url, title }) — some providers
  * Aborts propagate: req.signal → controller.abort() → upstream fetch.
+ *
+ * A base URL on api.anthropic.com is served by the native Messages API instead
+ * (lib/anthropic.ts), with the same response contract. Web search there uses
+ * Anthropic's web search tool, and its results become the citations trailer.
  */
 import { NextRequest } from "next/server";
 import { CITATIONS_SENTINEL } from "@/lib/constants";
 import { DONE_SENTINEL } from "@/lib/streamProtocol";
-import { resolveLlmCreds } from "@/lib/llmServer";
+import { resolveLlmCreds, type LlmCreds } from "@/lib/llmServer";
+import { llmProvider } from "@/lib/llmProvider";
+import {
+  LlmRefusalError,
+  anthropicErrorMessage,
+  openAnthropicStream,
+  type AnthropicStreamHandle,
+} from "@/lib/anthropic";
 
 /**
  * A sentence the user can act on, from a provider error body.
@@ -144,6 +155,17 @@ function collectCitations(payload: Record<string, unknown>): UrlCitation[] {
   return out;
 }
 
+/** The CITATIONS PROTOCOL trailer, deduplicated by URL. */
+function citationsTrailer(citations: UrlCitation[]): string {
+  const seen = new Set<string>();
+  const unique = citations.filter((c) => {
+    if (!c.url || seen.has(c.url)) return false;
+    seen.add(c.url);
+    return true;
+  });
+  return `\n${CITATIONS_SENTINEL}\n${JSON.stringify(unique)}\n`;
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     baseUrl?: string;
@@ -198,6 +220,10 @@ export async function POST(req: NextRequest) {
   req.signal.addEventListener("abort", () => controller.abort());
 
   const encoder = new TextEncoder();
+
+  if (llmProvider(base) === "anthropic") {
+    return anthropicChat(creds, messages, webSearch, controller, body.maxTokens);
+  }
 
   try {
     const upstream = await fetch(`${base}/chat/completions`, {
@@ -288,15 +314,7 @@ export async function POST(req: NextRequest) {
         } finally {
           reader.releaseLock();
           if (webSearch && citations.length > 0) {
-            const seen = new Set<string>();
-            const unique = citations.filter((c) => {
-              if (!c.url || seen.has(c.url)) return false;
-              seen.add(c.url);
-              return true;
-            });
-            controllerSink.enqueue(
-              encoder.encode(`\n${CITATIONS_SENTINEL}\n${JSON.stringify(unique)}\n`),
-            );
+            controllerSink.enqueue(encoder.encode(citationsTrailer(citations)));
           }
           // Only a stream that ran to completion gets the marker. Its absence
           // is how the client knows the answer is truncated.
@@ -330,4 +348,70 @@ export async function POST(req: NextRequest) {
     console.error("[llm/chat]", err);
     return new Response("Failed to reach the LLM provider.", { status: 502 });
   }
+}
+/**
+ * The same response contract as the OpenAI path (text deltas, citations
+ * trailer, DONE marker only on a complete answer), served by the native
+ * Anthropic Messages API.
+ */
+async function anthropicChat(
+  creds: LlmCreds,
+  messages: ChatMessage[],
+  webSearch: boolean,
+  controller: AbortController,
+  maxTokens?: number,
+): Promise<Response> {
+  let handle: AnthropicStreamHandle;
+  try {
+    handle = await openAnthropicStream(creds, messages, {
+      maxTokens,
+      webSearch,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const { status, message } = anthropicErrorMessage(err);
+    console.error(`[llm/chat] anthropic ${status}:`, err);
+    return new Response(message, { status });
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(sink) {
+      let streamFailed = false;
+      let citations: UrlCitation[] = [];
+      try {
+        ({ citations } = await handle.pump((text) => sink.enqueue(encoder.encode(text))));
+      } catch (err) {
+        if (err instanceof LlmRefusalError) {
+          // A refusal is a finished answer, not a truncated one: say so and
+          // still send the DONE marker.
+          sink.enqueue(encoder.encode(`\n\n_${err.message}_`));
+        } else {
+          streamFailed = true;
+          console.error("[llm/chat] anthropic stream error:", err);
+        }
+      }
+      try {
+        if (webSearch && citations.length > 0) {
+          sink.enqueue(encoder.encode(citationsTrailer(citations)));
+        }
+        if (!streamFailed) sink.enqueue(encoder.encode(`\n${DONE_SENTINEL}\n`));
+        sink.close();
+      } catch {
+        // Consumer already gone.
+      }
+    },
+    cancel() {
+      handle.abort();
+      controller.abort();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "cache-control": "no-store",
+    },
+  });
 }
