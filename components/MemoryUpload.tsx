@@ -223,7 +223,7 @@ function FileTab({
           "transition-colors cursor-pointer rounded-sm border-2 border-dashed px-4 py-8 text-center outline-none",
           dragging
             ? "border-accent bg-accent-tint"
-            : "border-line bg-bg-2 hover:border-accent-line",
+            : "border-line bg-bg-2 hover:border-stroke-3",
           busy && "cursor-not-allowed opacity-60",
         )}
       >

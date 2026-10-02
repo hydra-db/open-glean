@@ -33,7 +33,7 @@ export default function AskPage() {
   );
 
   return (
-    <div className="obsidian relative flex h-full w-full flex-col items-center justify-center overflow-y-auto px-4 py-8">
+    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto px-4 py-8">
       <div className="relative w-full max-w-[680px]">
         <AskSearchBar onSubmit={onSubmit} />
       </div>

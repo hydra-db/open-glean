@@ -755,7 +755,7 @@ function ChatClient({ id }: { id: string }) {
   // Hydrating from MongoDB — show a skeleton instead of an empty chat.
   if (waitingForStore) {
     return (
-      <div className="obsidian flex h-full flex-col">
+      <div className="flex h-full flex-col">
         <ChatHeader title="Loading…" loading onBack={() => router.push("/ask")} />
         <div className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-end gap-4 overflow-y-auto px-4 pb-4">
           <div className="h-20 animate-pulse rounded-md bg-white/[0.04]" />
@@ -766,7 +766,7 @@ function ChatClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="obsidian flex h-full flex-col">
+    <div className="flex h-full flex-col">
       <ChatHeader
         title={conv?.title ?? "Chat"}
         meta={
@@ -792,7 +792,7 @@ function ChatClient({ id }: { id: string }) {
         <div className="mx-auto w-full max-w-[760px] px-3 py-6 sm:px-6">
           {isEmpty ? (
             <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-stroke-2 bg-white/[0.04] text-text-1">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-stroke-1 bg-white/[0.04] text-text-1">
                 <Icon name="sparkles" size={22} />
               </div>
               <h2 className="font-pixel text-[22px] font-normal text-text-3">
@@ -810,7 +810,7 @@ function ChatClient({ id }: { id: string }) {
                       setInput("");
                       void send(s);
                     }}
-                    className="rounded-full border border-stroke-2 px-3 py-1.5 text-[12px] text-fg-3 transition-colors hover:border-stroke-3 hover:text-fg"
+                    className="rounded-full border border-stroke-1 px-3 py-1.5 text-[12px] text-fg-3 transition-colors hover:border-stroke-3 hover:text-fg"
                   >
                     {s}
                   </button>
@@ -822,13 +822,13 @@ function ChatClient({ id }: { id: string }) {
               {messages.map((m) =>
                 m.role === "user" ? (
                   <div key={m.id} className="flex justify-end">
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-white/10 bg-white/[0.06] px-4 py-2.5 text-[13.5px] leading-relaxed text-text-3">
+                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-stroke-1 bg-white/[0.06] px-4 py-2.5 text-[13.5px] leading-relaxed text-text-3">
                       {m.content}
                     </div>
                   </div>
                 ) : (
                   <div key={m.id} className="group flex items-start gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-stroke-2 bg-white/[0.04] text-text-1">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-stroke-1 bg-white/[0.04] text-text-1">
                       <Icon name="spark" size={14} />
                     </div>
                     <div
@@ -940,7 +940,7 @@ function ChatClient({ id }: { id: string }) {
       {scrolledUp ? (
         <button
           onClick={scrollToBottom}
-          className="fixed bottom-[150px] right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-stroke-2 bg-[#141416] text-text-1 shadow-xl transition-transform hover:scale-105 md:bottom-[100px]"
+          className="fixed bottom-[150px] right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-stroke-1 bg-[#141416] text-text-1 shadow-xl transition-transform hover:scale-105 md:bottom-[100px]"
           aria-label="Scroll to bottom"
         >
           <Icon name="chevDown" size={16} />
@@ -970,8 +970,8 @@ function ChatClient({ id }: { id: string }) {
               className={cn(
                 "flex h-[24px] items-center gap-1.5 rounded-full border border-solid px-2.5 text-[11.5px] font-medium transition-colors",
                 webSearch
-                  ? "border-white/25 bg-white/10 text-text-3"
-                  : "border-stroke-2 text-text-2 hover:border-stroke-3 hover:text-text-1",
+                  ? "border-accent-line bg-white/10 text-text-3"
+                  : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
               )}
               title={
                 webSearch
@@ -993,8 +993,8 @@ function ChatClient({ id }: { id: string }) {
               className={cn(
                 "flex h-[24px] items-center gap-1.5 rounded-full border border-solid px-2.5 text-[11.5px] font-medium transition-colors",
                 mode !== "fast"
-                  ? "border-white/25 bg-white/10 text-text-3"
-                  : "border-stroke-2 text-text-2 hover:border-stroke-3 hover:text-text-1",
+                  ? "border-accent-line bg-white/10 text-text-3"
+                  : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
               )}
               title={MODE_META[mode].title}
             >
@@ -1005,7 +1005,7 @@ function ChatClient({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => setFilters(undefined)}
-                className="flex h-[24px] items-center gap-1.5 rounded-full border border-solid border-white/25 bg-white/10 px-2.5 text-[11.5px] font-medium text-text-3 transition-colors hover:bg-white/[0.14]"
+                className="flex h-[24px] items-center gap-1.5 rounded-full border border-solid border-accent-line bg-white/10 px-2.5 text-[11.5px] font-medium text-text-3 transition-colors hover:bg-white/[0.14]"
                 title="Clear the metadata filters"
               >
                 <Icon name="filter" size={12} />
@@ -1016,7 +1016,7 @@ function ChatClient({ id }: { id: string }) {
           </div>
           <div
             className={cn(
-              "flex items-end gap-2 rounded-xl border border-stroke-2 bg-white/[0.03] px-3 py-2 shadow-2xl shadow-black/60 transition-colors",
+              "flex items-end gap-2 rounded-xl border border-stroke-1 bg-white/[0.03] px-3 py-2 shadow-2xl shadow-black/60 transition-colors",
               "focus-within:border-stroke-3 focus-within:ring-4 focus-within:ring-white/[0.06]",
               running && "opacity-60",
             )}
@@ -1038,7 +1038,7 @@ function ChatClient({ id }: { id: string }) {
             {running ? (
               <button
                 onClick={stopRun}
-                className="btn shrink-0 rounded-full border border-stroke-2 text-text-1 hover:bg-white/[0.06]"
+                className="btn shrink-0 rounded-full border border-stroke-1 text-text-1 hover:bg-white/[0.06]"
                 aria-label="Stop generating"
               >
                 <Icon name="stop" size={14} />

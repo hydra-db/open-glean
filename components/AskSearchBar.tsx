@@ -68,7 +68,7 @@ export function LlmMissingNotice({ className = "" }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-md border border-warn/40 bg-warn-fill px-3.5 py-2.5",
+        "flex items-start gap-2.5 rounded-md border border-warn/30 bg-warn-fill px-3.5 py-2.5",
         className,
       )}
     >
@@ -309,7 +309,7 @@ export default function AskSearchBar({
 
       <div
         className={cn(
-          "relative isolate flex flex-col rounded-xl border border-solid border-stroke-2 bg-white/[0.03] shadow-2xl shadow-black/60 transition-all",
+          "relative isolate flex flex-col rounded-xl border border-solid border-stroke-1 bg-white/[0.03] shadow-2xl shadow-black/60 transition-all",
           "focus-within:border-stroke-3 focus-within:ring-4 focus-within:ring-white/[0.06]",
           disabled && "opacity-60",
         )}
@@ -337,8 +337,8 @@ export default function AskSearchBar({
               "flex h-[34px] items-center gap-1.5 rounded-full border border-solid px-3 text-xs font-medium",
               synced && "transition-all",
               webSearch
-                ? "border-white/25 bg-white/10 text-text-3"
-                : "border-stroke-2 text-text-2 hover:border-stroke-3 hover:text-text-1",
+                ? "border-accent-line bg-white/10 text-text-3"
+                : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
             )}
             title={webSearch ? "Web search on. Answers can cite live results." : "Web search off"}
           >
@@ -353,8 +353,8 @@ export default function AskSearchBar({
             className={cn(
               "flex h-[34px] items-center gap-1.5 rounded-full border border-solid px-3 text-xs font-medium transition-all",
               activeFilterCount > 0
-                ? "border-white/25 bg-white/10 text-text-3"
-                : "border-stroke-2 text-text-2 hover:border-stroke-3 hover:text-text-1",
+                ? "border-accent-line bg-white/10 text-text-3"
+                : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
             )}
             title="Filter by exact-match metadata key / value pairs"
           >
@@ -374,14 +374,14 @@ export default function AskSearchBar({
               role="radiogroup"
               aria-label="Answer depth"
               onKeyDown={onModeKey}
-              className="relative flex h-[34px] items-center rounded-full border border-solid border-stroke-2"
+              className="relative flex h-[34px] items-center rounded-full border border-solid border-stroke-1"
             >
               {/* The sliding highlight, measured to the active segment. Hidden
                   until measured. */}
               <span
                 aria-hidden
                 className={cn(
-                  "absolute inset-y-0 rounded-full border border-solid border-white/25 bg-white/10 ease-out",
+                  "absolute inset-y-0 rounded-full border border-solid border-accent-line bg-white/10 ease-out",
                   modeInd.width === 0 ? "opacity-0" : "opacity-100",
                   indReady && "transition-all duration-200",
                 )}
@@ -435,7 +435,7 @@ export default function AskSearchBar({
               setQuery(s);
               textareaRef.current?.focus();
             }}
-            className="max-w-full truncate rounded-full border border-solid border-stroke-2 px-3 py-1 text-[11.5px] text-text-2 transition-colors hover:border-stroke-3 hover:text-text-1"
+            className="max-w-full truncate rounded-full border border-solid border-stroke-1 px-3 py-1 text-[11.5px] text-text-2 transition-colors hover:border-stroke-3 hover:text-text-1"
           >
             {s}
           </button>
@@ -447,7 +447,7 @@ export default function AskSearchBar({
       ) : null}
 
       {contextEmpty ? (
-        <div className="mt-3.5 flex animate-fadeIn items-start gap-2.5 rounded-md border border-solid border-stroke-2 bg-white/[0.02] px-3.5 py-2.5">
+        <div className="mt-3.5 flex animate-fadeIn items-start gap-2.5 rounded-md border border-solid border-stroke-1 bg-white/[0.02] px-3.5 py-2.5">
           <Icon name="info" size={15} className="mt-0.5 shrink-0 text-text-2" />
           <p className="text-[12.5px] leading-snug text-fg-2">
             You have not added any context yet. Answers are better with your own
@@ -486,7 +486,7 @@ export default function AskSearchBar({
       >
         <p className="mb-3 text-xs text-text-2">
           Exact-match key / value pairs scoped to your stored metadata (e.g.{" "}
-          <span className="font-mono text-brand-1">provider: jira</span>).
+          <span className="font-mono text-text-1">provider: jira</span>).
         </p>
         <div className="flex flex-col gap-1.5">
           {filterRows.map((row, i) => (
@@ -532,7 +532,7 @@ export default function AskSearchBar({
         <button
           type="button"
           onClick={() => setFilterRows((rows) => [...rows, { key: "", value: "" }])}
-          className="mt-2.5 flex items-center gap-1 text-xs text-text-2 transition-colors hover:text-brand-1"
+          className="mt-2.5 flex items-center gap-1 text-xs text-text-2 transition-colors hover:text-text-1"
         >
           <Icon name="plus" size={12} /> Add filter
         </button>

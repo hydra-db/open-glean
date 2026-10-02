@@ -48,7 +48,7 @@ export default function ChatHistoryPage() {
       <div className="mx-auto max-w-[760px] px-4 pb-16 pt-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-[26px] font-bold tracking-tight text-fg">
+          <h1 className="font-pixel text-[28px] font-normal leading-tight text-text-3">
             Chat history
           </h1>
           <p className="mt-1.5 text-[13px] text-fg-3">
@@ -118,7 +118,7 @@ export default function ChatHistoryPage() {
                         router.push(`/chat/${c.id}`);
                       }
                     }}
-                    className="group flex cursor-pointer items-center gap-3 rounded-md border border-line bg-bg-2 px-4 py-3 transition-colors hover:border-accent-line hover:bg-bg-elev"
+                    className="group flex cursor-pointer items-center gap-3 rounded-md border border-line bg-bg-2 px-4 py-3 transition-colors hover:border-stroke-3 hover:bg-bg-elev"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-accent-dim text-accent">
                       <Icon name="msg" size={16} />
