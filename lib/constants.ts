@@ -11,8 +11,6 @@ export const GRAPH_MAX_NODES = 10000;
  */
 export const CITATIONS_SENTINEL = "---OPEN-GLEAN-CITATIONS---";
 
-/** Legacy sentinel — still recognised when parsing, never emitted. */
-
 /** Human label for a provider slug (title-cased). */
 export function providerLabel(provider: string): string {
   const slug = provider.trim().toLowerCase();
