@@ -17,11 +17,11 @@ export function escapeHtml(s: string): string {
 }
 
 const CODE_CLS =
-  "rounded-sm border border-line bg-inset px-1 py-0.5 font-mono text-[12px] text-accent-2";
+  "rounded-sm border border-line bg-inset px-1 py-0.5 font-mono text-[12px] text-text-1";
 const CODE_BLOCK_CLS =
   "my-2 block overflow-x-auto rounded-sm border border-line bg-inset px-3 py-2.5 font-mono text-[12.5px] leading-relaxed text-fg-2";
 const LINK_CLS =
-  "text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent";
+  "text-text-1 underline decoration-white/30 underline-offset-2 hover:decoration-white/70";
 
 export function inlineMarkdown(s: string): string {
   let out = escapeHtml(s);

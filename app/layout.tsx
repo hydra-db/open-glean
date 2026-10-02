@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { reportEnv } from "@/lib/env";
 import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistPixelSquare } from "geist/font/pixel";
 import { StoreProvider } from "@/lib/store/config";
 import { ChatStoreProvider } from "@/lib/store/chat";
 import { ToastProvider } from "@/lib/toast";
@@ -47,7 +49,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className={`${inter.variable} ${GeistSans.variable} ${GeistPixelSquare.variable}`}
+      suppressHydrationWarning>
       <body className="font-sans">
         <StoreProvider>
           <ChatStoreProvider>
