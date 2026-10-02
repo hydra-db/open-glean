@@ -262,7 +262,12 @@ export default function Page() {
                 />
               </Field>
               <Field label="Model">
-                <ModelPicker value={model} onChange={setModel} />
+                <ModelPicker
+                  value={model}
+                  onChange={setModel}
+                  apiKey={apiKey}
+                  baseUrl={baseUrl}
+                />
               </Field>
             </div>
 
