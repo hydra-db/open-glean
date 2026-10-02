@@ -193,6 +193,11 @@
   --font-sans: var(--sans);
   --font-label: var(--label);
   --font-mono: var(--mono);
+  /* Geist (SIL Open Font License), loaded in app/layout.tsx from the geist
+     package. Used by the Ask and chat pages; the rest of the app stays on
+     Inter. */
+  --font-geist: var(--font-geist-sans), var(--sans);
+  --font-pixel: var(--font-geist-pixel-square), var(--mono);
 }
 
 @layer components {
@@ -531,8 +536,8 @@
    pulse once, then fade, so the eye can find the card the scroll landed on. */
 @keyframes citeFlash {
   0% {
-    box-shadow: 0 0 0 2px var(--accent-line);
-    background-color: var(--accent-dim);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28);
+    background-color: rgba(255, 255, 255, 0.06);
   }
   100% {
     box-shadow: 0 0 0 2px transparent;
@@ -543,30 +548,21 @@
   animation: citeFlash 1.1s ease-out;
 }
 
-/* Home atmosphere. A faint dotted grid fades from the top, and a soft accent
-   glow sits behind the hero. Both are static and low contrast, so the page has
-   depth without any moving parts. */
-.hero-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(var(--stroke-1) 1px, transparent 1px);
-  background-size: 22px 22px;
-  /* Cover the whole page, fading only slightly at the very edges so the faint
-     grid reads across all of it, not just under the hero. */
-  -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
-  mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
-  opacity: 0.25;
+/* Ask and chat pages. A flat obsidian canvas with Geist type and monochrome
+   controls: no accent glow, and white instead of brand orange for focus and
+   active states. */
+.obsidian {
+  --obsidian: #0a0a0b;
+  background: var(--obsidian);
+  font-family: var(--font-geist);
 }
-.hero-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 38% 30% at 50% 46%,
-    rgba(255, 87, 26, 0.11),
-    transparent 68%
-  );
+.obsidian :focus-visible {
+  box-shadow:
+    0 0 0 2px var(--obsidian),
+    0 0 0 4px var(--text-1);
+}
+.obsidian .no-focus-ring:focus-visible {
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

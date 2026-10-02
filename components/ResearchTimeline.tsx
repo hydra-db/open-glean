@@ -78,7 +78,7 @@ export default function ResearchTimeline({
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
         aria-expanded={open}
       >
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center text-accent">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center text-text-1">
           {done ? (
             <Icon
               name={
@@ -219,7 +219,7 @@ function NodeRow({ node }: { node: ResearchNodeState }) {
 
 function StatusDot({ status }: { status: ResearchNodeState["status"] }) {
   if (status === "running") {
-    return <Spinner size={12} className="mt-0.5 shrink-0 text-accent" />;
+    return <Spinner size={12} className="mt-0.5 shrink-0 text-text-2" />;
   }
   return (
     <span
