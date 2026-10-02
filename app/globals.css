@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 /*
- * Open Glean design system — ported 1:1 from the original web-app
- * (src/styles/global.css + tailwind.config.js), with the brand swapped
- * from purple (#485aff) to Hydra DB orange (#ff571a).
+ * Open Glean design system. An obsidian, monochrome theme: near-black
+ * neutral surfaces, Geist type, and white as the interactive accent. Hydra DB
+ * orange (#ff571a) is kept for the brand itself (logo, active page in the
+ * nav) rather than for every control, so it still means something.
  *
  * Token names mirror the web-app (surface-1..9, text-1..3, stroke-1..3,
  * brand-1/2) and legacy aliases (bg-*, fg-*, line, accent) kept so every
@@ -16,28 +17,32 @@
     --brand-1: #ff571a;
     --brand-2: #e5430b;
 
-    /* Strokes — hydradb.com line greys (#2e2e2e / #2f3131 / #353535).
-       Cooler and crisper than the old warm greys, so borders read as edges. */
-    --stroke-1: #262829;
-    --stroke-2: #2f3131;
-    --stroke-3: #3a3c3d;
+    /*
+      Borders. One colour for every resting edge (cards, inputs, pills,
+      dividers) so the whole app shares a single line weight, and one brighter
+      colour for hover and focus. Selected states use --accent-line.
+      stroke-2 is kept as an alias of stroke-1 so older call sites match.
+    */
+    --stroke-1: #232326;
+    --stroke-2: var(--stroke-1);
+    --stroke-3: #3a3a3f;
 
     /* Text */
     --text-1: #ececec;
     --text-2: #b4b4b4;
     --text-3: #ffffff;
 
-    /* Surfaces — hydradb.com near-blacks (#000, #0f1112, #121212).
-       Cool and deep, not the old warm charcoal. Each step is a real edge. */
-    --surface-1: #0e1011; /* page */
-    --surface-2: #191b1c; /* raised */
-    --surface-3: #0a0c0d; /* canvas */
-    --surface-4: #161819; /* cards */
-    --surface-5: #090a0b; /* sidebar rail */
-    --surface-6: #151718;
-    --surface-7: #212425; /* hover */
-    --surface-8: #1c1f20; /* active nav */
-    --surface-9: #191b1c;
+    /* Surfaces. Obsidian near-blacks with no colour cast. Each step is a real
+       edge against the page. */
+    --surface-1: #0a0a0b; /* page (obsidian) */
+    --surface-2: #151517; /* raised */
+    --surface-3: #070708; /* canvas */
+    --surface-4: #111113; /* cards */
+    --surface-5: #08080a; /* sidebar rail */
+    --surface-6: #131315;
+    --surface-7: #1d1d20; /* hover */
+    --surface-8: #18181b; /* active nav */
+    --surface-9: #151517;
 
     /* Status (web-app) */
     --error-1: #ea6868;
@@ -73,19 +78,19 @@
     --line: var(--stroke-1);
     --border-mid: var(--stroke-2);
     --line-2: var(--stroke-2);
-    --accent: var(--brand-1);
-    --accent-2: #ff6a33;
-    --accent-press: var(--brand-2);
-    --accent-dim: rgba(255, 87, 26, 0.09);
-    --accent-tint: rgba(255, 87, 26, 0.16);
     /*
-      Text colour for an active chip sitting ON accent-tint. The brand orange
-      itself measures 4.36:1 against that composited background — just under
-      the line — so a lighter tint of the same hue is used where the two meet.
+      The interactive accent is white: selected chips, focus, links and the
+      primary button. Tints are white at low alpha so a selected control lifts
+      off the surface without adding a hue.
     */
-    --accent-on-tint: #ff7a45;
-    --accent-line: rgba(255, 87, 26, 0.34);
-    --accent-ring: rgba(255, 87, 26, 0.18);
+    --accent: var(--text-1);
+    --accent-2: #ffffff;
+    --accent-press: #d6d6d6;
+    --accent-dim: rgba(255, 255, 255, 0.05);
+    --accent-tint: rgba(255, 255, 255, 0.09);
+    --accent-on-tint: #ffffff;
+    --accent-line: rgba(255, 255, 255, 0.22);
+    --accent-ring: rgba(255, 255, 255, 0.07);
     --highlight: #ffc423;
     --good: var(--success-1);
     --good-fill: rgba(83, 185, 87, 0.14);
@@ -98,10 +103,10 @@
     --radius-sm: 0.5rem; /* rounded-md — buttons, inputs */
     --radius-xs: 0.375rem; /* rounded-sm — badges */
 
-    /* Inter (SIL Open Font License) is the primary UI font, loaded via
-       next/font/google in app/layout.tsx. System fonts serve as fallbacks. */
-    --sans: var(--inter), -apple-system, "Segoe UI", Roboto, sans-serif;
-    --label: var(--inter), -apple-system, "Segoe UI", sans-serif;
+    /* Geist Sans (SIL Open Font License) is the UI font, loaded from the geist
+       package in app/layout.tsx. System fonts serve as fallbacks. */
+    --sans: var(--font-geist-sans), -apple-system, "Segoe UI", Roboto, sans-serif;
+    --label: var(--font-geist-sans), -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
   }
 
@@ -193,10 +198,7 @@
   --font-sans: var(--sans);
   --font-label: var(--label);
   --font-mono: var(--mono);
-  /* Geist (SIL Open Font License), loaded in app/layout.tsx from the geist
-     package. Used by the Ask and chat pages; the rest of the app stays on
-     Inter. */
-  --font-geist: var(--font-geist-sans), var(--sans);
+  /* Geist Pixel Square for headings, from the geist package (OFL). */
   --font-pixel: var(--font-geist-pixel-square), var(--mono);
 }
 
@@ -220,12 +222,6 @@
     @apply cursor-not-allowed opacity-50;
   }
   /*
-     Dark text on the orange, not white. White measured 3.17:1 and got WORSE
-     on hover (2.85:1), on the app's primary confirm button at 15px — a plain
-     WCAG 1.4.3 failure. Dark text on the same brand colour is 6.63:1 and
-     keeps the brand, which beats darkening the orange itself.
-  */
-  /*
      One visible focus ring for everything.
 
      The app had no :focus-visible rule at all and 11 bare `outline-none`
@@ -239,7 +235,7 @@
     outline: none;
     box-shadow:
       0 0 0 2px var(--surface-1),
-      0 0 0 4px var(--brand-1);
+      0 0 0 4px var(--text-1);
     border-radius: inherit;
   }
   /*
@@ -253,7 +249,7 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors bg-brand-1 text-[#140a03] hover:bg-accent-2;
+    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors bg-text-1 text-surface-1 hover:bg-white;
     height: 2.25rem;
     padding: 0 1.125rem;
     font-size: 0.9375rem;
@@ -332,7 +328,7 @@
     @apply transition-all duration-150;
   }
   .card-hover:hover {
-    border-color: var(--accent-line);
+    border-color: var(--stroke-3);
     background: var(--surface-6);
     transform: translateY(-1px);
     box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
@@ -362,7 +358,7 @@
       box-shadow 0.15s ease;
   }
   .input:focus {
-    border-color: var(--brand-1);
+    border-color: var(--stroke-3);
     box-shadow: 0 0 0 3px var(--accent-ring);
   }
 
@@ -546,23 +542,6 @@
 }
 .cite-flash {
   animation: citeFlash 1.1s ease-out;
-}
-
-/* Ask and chat pages. A flat obsidian canvas with Geist type and monochrome
-   controls: no accent glow, and white instead of brand orange for focus and
-   active states. */
-.obsidian {
-  --obsidian: #0a0a0b;
-  background: var(--obsidian);
-  font-family: var(--font-geist);
-}
-.obsidian :focus-visible {
-  box-shadow:
-    0 0 0 2px var(--obsidian),
-    0 0 0 4px var(--text-1);
-}
-.obsidian .no-focus-ring:focus-visible {
-  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -329,7 +329,7 @@ export default function MindmapPage() {
                       className={cn(
                         "flex h-8 items-center gap-1.5 rounded-md border border-solid px-2.5 text-xs transition-colors",
                         relFilter || relOpen
-                          ? "border-brand-1 text-brand-1"
+                          ? "border-accent-line text-text-1"
                           : "border-stroke-1 text-text-2 hover:text-text-1",
                       )}
                     >
@@ -349,7 +349,7 @@ export default function MindmapPage() {
                             }}
                           >
                             All relations
-                            {!relFilter && <Icon name="check" size={12} className="text-brand-1" />}
+                            {!relFilter && <Icon name="check" size={12} className="text-text-1" />}
                           </button>
                           {relationTypes.map((t) => (
                             <button
@@ -363,7 +363,7 @@ export default function MindmapPage() {
                               <span
                                 className={cn(
                                   "truncate font-mono uppercase",
-                                  relFilter === t.type ? "text-brand-1" : "text-text-2",
+                                  relFilter === t.type ? "text-text-1" : "text-text-2",
                                 )}
                               >
                                 {t.type}
@@ -387,7 +387,7 @@ export default function MindmapPage() {
                   className={cn(
                     "flex h-8 items-center gap-1.5 rounded-md border border-solid px-2.5 text-xs transition-colors",
                     showLabels
-                      ? "border-brand-1 text-brand-1"
+                      ? "border-accent-line text-text-1"
                       : "border-stroke-1 text-text-2 hover:text-text-1",
                   )}
                 >
@@ -425,21 +425,21 @@ export default function MindmapPage() {
                 <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1 rounded-lg border border-solid border-stroke-1 bg-surface-4/90 p-1 shadow-xl backdrop-blur-sm">
                   <button
                     onClick={() => graphRef.current?.zoomIn()}
-                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-brand-1"
+                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-text-1"
                     title="Zoom in"
                   >
                     <Icon name="plus" size={14} />
                   </button>
                   <button
                     onClick={() => graphRef.current?.zoomOut()}
-                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-brand-1"
+                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-text-1"
                     title="Zoom out"
                   >
                     <Icon name="minus" size={14} />
                   </button>
                   <button
                     onClick={() => graphRef.current?.resetView()}
-                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-brand-1"
+                    className="flex h-7 w-7 items-center justify-center rounded text-text-2 transition-colors hover:bg-surface-7 hover:text-text-1"
                     title="Reset view"
                   >
                     <Icon name="fit" size={13} />
@@ -476,7 +476,7 @@ export default function MindmapPage() {
                     <span className="rounded-md border border-solid border-stroke-1 bg-surface-2 px-2 py-1 text-text-2">
                       {selected.source.name}
                     </span>
-                    <span className="rounded-md bg-accent-tint px-2 py-1 font-mono text-[10px] font-semibold uppercase text-brand-1">
+                    <span className="rounded-md bg-accent-tint px-2 py-1 font-mono text-[10px] font-semibold uppercase text-text-1">
                       {selected.relations?.[0]?.canonical_predicate ?? "related"}
                     </span>
                     <span className="rounded-md border border-solid border-stroke-1 bg-surface-2 px-2 py-1 text-text-2">

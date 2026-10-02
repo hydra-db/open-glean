@@ -200,8 +200,8 @@ const COLOR_ENTITY = "#888888"; // entity — solid grey
 const COLOR_MEMORY = "#ffc423"; // memory — brand yellow (--highlight)
 const COLOR_LINK = "#5a5a5a"; // resting edge — readable grey, not near-black
 const COLOR_LINK_DIM = "rgba(90,90,90,0.38)"; // edges dimmed while something is active
-const COLOR_ACCENT = "#ff571a"; // --accent — focus / hover highlight
-const COLOR_ACCENT_2 = "#ff6a33"; // --accent-2 — highlighted relation text
+const COLOR_ACCENT = "#ececec"; // --accent — focus / hover highlight
+const COLOR_ACCENT_2 = "#ffffff"; // --accent-2 — highlighted relation text
 const COLOR_LABEL = "#808080"; // node + relation label text (--fg-3)
 const COLOR_LABEL_BG = "#141414"; // relation label box fill
 const COLOR_LABEL_BORDER = "#3a3a3a"; // relation label box border (--line-2)
@@ -235,12 +235,9 @@ function nodeDotColor(graphSource: GraphSourceKind | undefined): string {
 // PROVENANCE, not extracted knowledge. They get their own hues, well away from
 // the entity/memory palette, so a reader never mistakes "this was mentioned in
 // that message" for "the model extracted this fact".
-// Orange, held deliberately clear of --accent (#ff571a). The accent means
-// "focused / hovered" and HOVER DRAWS A RING -- the same shape a structural
-// node uses for its kind -- so an orange too close to it makes every message
-// look selected. #E8722C sits 40 units from the accent in RGB; this sits 57,
-// far enough to read as a different colour beside it while still plainly
-// orange, and no closer to any other legend colour.
+// Orange, and clear of the white focus accent: hover draws a ring, the same
+// shape a structural node uses for its kind, so the two must never be
+// confusable.
 const COLOR_AUX_SOURCE = "#E07B39";
 const COLOR_AUX_COMMENT = "#4F8DB3";
 const COLOR_AUX_ATTACHMENT = "#6E8B5A";

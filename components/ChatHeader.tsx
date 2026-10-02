@@ -151,7 +151,7 @@ export function ChatHeader({
           <button
             type="button"
             onClick={onNew}
-            className="flex h-8 items-center gap-1.5 rounded-full border border-solid border-stroke-2 px-2.5 text-xs font-medium text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.06] sm:px-3"
+            className="flex h-8 items-center gap-1.5 rounded-full border border-solid border-stroke-1 px-2.5 text-xs font-medium text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.06] sm:px-3"
             title="New chat"
             aria-label="New chat"
           >

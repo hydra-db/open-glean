@@ -350,8 +350,9 @@ export function Switch({
     >
       <span
         className={cn(
-          "absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white shadow transition-transform",
-          checked && "translate-x-4",
+          "absolute top-[2px] left-[2px] h-4 w-4 rounded-full shadow transition-transform",
+          // The track turns white when on, so the knob flips dark to stay visible.
+          checked ? "translate-x-4 bg-surface-1" : "bg-white",
         )}
       />
     </button>
@@ -380,7 +381,7 @@ export function EmptyState({
           aria-hidden
           className="absolute inset-0 -m-3 rounded-full bg-accent/[0.06] blur-xl"
         />
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-solid border-stroke-2 bg-surface-4 text-fg-3 shadow-inner shadow-black/20">
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-solid border-stroke-1 bg-surface-4 text-fg-3 shadow-inner shadow-black/20">
           <Icon name={icon} size={22} />
         </div>
       </div>
@@ -438,10 +439,105 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-[26px] font-bold tracking-tight text-fg">{title}</h1>
+        <h1 className="font-pixel text-[28px] font-normal leading-tight text-text-3">{title}</h1>
         {subtitle ? <p className="mt-1.5 text-[13px] text-fg-3">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-2 shrink-0">{actions}</div> : null}
+    </div>
+  );
+}
+// ── Compact buttons ───────────────────────────────────────────────
+
+/**
+ * Pill buttons for dense surfaces such as settings rows, where the full-size
+ * .btn-* classes read as oversized. One height and type size across variants
+ * so a row of mixed buttons lines up.
+ */
+const BTN_BASE =
+  "inline-flex h-8 shrink-0 select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-45";
+
+export const btn = {
+  primary: cn(BTN_BASE, "bg-text-1 px-3.5 text-surface-1 hover:bg-white"),
+  secondary: cn(
+    BTN_BASE,
+    "border border-solid border-stroke-1 text-text-1 hover:border-stroke-3 hover:bg-white/[0.05]",
+  ),
+  ghost: cn(BTN_BASE, "text-text-2 hover:bg-white/[0.05] hover:text-text-1"),
+  danger: cn(
+    BTN_BASE,
+    "border border-solid border-bad/30 text-bad hover:border-bad/50 hover:bg-bad-fill",
+  ),
+};
+
+// ── Settings layout ───────────────────────────────────────────────
+
+/**
+ * A titled group of settings: a heading and one-line description above a
+ * single bordered card. Children are rows; the card draws hairlines between
+ * them, so rows never nest a second border.
+ */
+export function SettingsSection({
+  title,
+  description,
+  danger = false,
+  children,
+}: {
+  title: string;
+  description?: ReactNode;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-3 px-0.5">
+        <h2 className={cn("text-[14px] font-medium", danger ? "text-bad" : "text-text-1")}>
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-fg-4">{description}</p>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          "divide-y divide-solid overflow-hidden rounded-xl border border-solid bg-surface-4",
+          danger ? "divide-bad/20 border-bad/30" : "divide-stroke-1 border-stroke-1",
+        )}
+      >
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/** One settings row: a label and description on the left, controls on the right. */
+export function SettingsRow({
+  label,
+  description,
+  children,
+}: {
+  label: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3.5">
+      <div className="min-w-0 flex-1 basis-[240px]">
+        <div className="text-[13px] font-medium text-text-1">{label}</div>
+        {description ? (
+          <div className="mt-0.5 text-[12.5px] leading-relaxed text-fg-4">{description}</div>
+        ) : null}
+      </div>
+      {children ? <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div> : null}
+    </div>
+  );
+}
+
+/** Footer strip at the bottom of a settings card: a note on the left, actions on the right. */
+export function SettingsFooter({ note, children }: { note?: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 bg-white/[0.015] px-4 py-3">
+      <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-fg-4">{note}</div>
+      {children ? <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div> : null}
     </div>
   );
 }

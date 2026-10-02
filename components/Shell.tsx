@@ -166,7 +166,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/context?add=1"
-                className="hidden h-8 items-center gap-1.5 rounded-full bg-brand-1 px-3.5 text-xs font-medium text-[#140a03] shadow-sm transition-all duration-150 hover:-translate-y-px hover:bg-accent-2 hover:shadow-md active:translate-y-0 sm:flex"
+                className="hidden h-8 items-center gap-1.5 rounded-full border border-solid border-stroke-1 px-3.5 text-xs font-medium text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.06] sm:flex"
               >
                 <Icon name="plus" size={13} />
                 <span>Add context</span>
@@ -185,7 +185,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         >
           {!ready ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-stroke-1 border-t-brand-1" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-stroke-1 border-t-text-1" />
             </div>
           ) : showApp ? (
             children
