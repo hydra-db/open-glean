@@ -122,3 +122,21 @@ export function markdownToHtml(text: string): string {
   }
   return out.join("");
 }
+
+/**
+ * Plain text from an answer, for one-line previews such as the chat history
+ * list. Drops headings, emphasis, code fences, links (keeping their text) and
+ * citation markers, then collapses whitespace. Not a renderer: the output is
+ * shown as text, never inserted as HTML.
+ */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\[([^\]]+)\]\((?:[^)]*)\)/g, "$1")
+    .replace(/\[(?:Web )?\d+\]/g, "")
+    .replace(/^\s{0,3}(?:#{1,6}\s+|>\s?|[-*+]\s+|\d+\.\s+)/gm, "")
+    .replace(/(\*\*|__|\*|_|~~)(?=\S)([\s\S]*?\S)\1/g, "$2")
+    .replace(/\s+/g, " ")
+    .trim();
+}

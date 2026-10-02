@@ -204,23 +204,6 @@
 
 @layer components {
   /* Buttons — web-app pill geometry (rounded-full primary, rounded-lg soft) */
-  .btn {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors;
-    height: 2.25rem;
-    padding: 0 1.125rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-  }
-  @media (min-width: 939px) {
-    .btn {
-      font-size: 0.875rem;
-      height: 2.25rem;
-    }
-  }
-  .btn:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
   /*
      One visible focus ring for everything.
 
@@ -248,75 +231,44 @@
     box-shadow: none;
   }
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors bg-text-1 text-surface-1 hover:bg-white;
+
+  /*
+     Buttons. One shape for every button in the app: a 2.25rem pill with
+     13.5px type, so a dialog's Cancel and Delete, a settings row and a page
+     header all line up. The variants differ only in fill. Danger is an
+     outlined red rather than a solid one: dark text on the red fill read as
+     brown, and white on it failed contrast (3.14:1).
+  */
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-soft,
+  .btn-danger {
+    @apply inline-flex shrink-0 items-center justify-center gap-1.5 select-none whitespace-nowrap rounded-full transition-colors;
     height: 2.25rem;
-    padding: 0 1.125rem;
-    font-size: 0.9375rem;
+    padding: 0 1rem;
+    font-size: 0.84375rem;
     font-weight: 500;
-    border-radius: 3.125rem;
   }
-  @media (min-width: 939px) {
-    .btn-primary {
-      font-size: 0.8125rem;
-      height: 2rem;
-    }
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-ghost:disabled,
+  .btn-soft:disabled,
+  .btn-danger:disabled {
+    @apply cursor-not-allowed opacity-45;
   }
-  .btn-primary:disabled {
-    @apply cursor-not-allowed opacity-50;
+  .btn-primary {
+    @apply bg-text-1 text-surface-1 hover:bg-white;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors text-text-2 hover:bg-surface-7 hover:text-text-1;
-    height: 2.25rem;
-    padding: 0 1.125rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
+    @apply text-text-2 hover:bg-white/[0.06] hover:text-text-1;
   }
-  @media (min-width: 939px) {
-    .btn-ghost {
-      font-size: 0.875rem;
-      height: 2.25rem;
-    }
-  }
-  .btn-ghost:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
+  .btn,
   .btn-soft {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors bg-surface-4 text-text-1 hover:bg-surface-7;
-    height: 2.25rem;
-    padding: 0 1.125rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    border: 1px solid var(--stroke-1);
+    @apply border border-solid border-stroke-1 text-text-1 hover:border-stroke-3 hover:bg-white/[0.05];
   }
-  @media (min-width: 939px) {
-    .btn-soft {
-      font-size: 0.875rem;
-      height: 2.25rem;
-    }
-  }
-  .btn-soft:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
-  /* Same fix: white on the red was 3.14:1, dark text is 6.68:1. */
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-1.5 select-none whitespace-nowrap transition-colors bg-error-1 text-[#140606] hover:brightness-110;
-    height: 2.25rem;
-    padding: 0 1.125rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border-radius: 3.125rem;
-  }
-  @media (min-width: 939px) {
-    .btn-danger {
-      font-size: 0.875rem;
-      height: 2.25rem;
-    }
-  }
-  .btn-danger:disabled {
-    @apply cursor-not-allowed opacity-50;
+    @apply border border-solid border-bad/40 bg-bad-fill text-bad hover:border-bad/60 hover:bg-bad/20;
   }
 
   .card {
@@ -407,27 +359,16 @@
   .sb-scroll::-webkit-scrollbar {
     display: none;
   }
-  /* Brand mark sits in the same 2.75rem box as the nav icons, so it centres
-     with them when collapsed and aligns to the left gutter when expanded. */
+  /* The brand row mirrors a nav row: the mark in the same 2.75rem icon box,
+     the name as a rail-label beside it, so the logo shares the icons' left
+     edge whether the rail is collapsed or expanded. */
   .sidebar-brand {
     @apply flex w-full items-center;
     height: 2.75rem;
     margin-bottom: 0.5rem;
   }
-  /* The logo lockup stays centred in both states: the bare mark when
-     collapsed, the mark plus wordmark when expanded. */
   .sidebar-brand > a {
-    @apply flex h-full w-full items-center justify-center gap-2;
-  }
-  /* Collapsed rail shows the square icon mark; expanded shows the wordmark. */
-  .sidebar .brand-wordmark {
-    display: none;
-  }
-  .sidebar:hover .brand-mark {
-    display: none;
-  }
-  .sidebar:hover .brand-wordmark {
-    display: block;
+    @apply flex h-full w-full items-center rounded-lg;
   }
   /* Labels appear when the rail expands. They sit one gutter right of the icon
      box, so every label starts on the same vertical line. */

@@ -149,7 +149,7 @@ export function Modal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="animate-slideUp w-full max-h-[85vh] overflow-y-auto rounded-md border border-line bg-bg-elev shadow-2xl outline-none"
+        className="animate-slideUp w-full max-h-[85vh] overflow-y-auto rounded-xl border border-solid border-stroke-1 bg-surface-4 shadow-2xl shadow-black/60 outline-none"
         style={{ maxWidth: width }}
         role="dialog"
         aria-modal="true"
@@ -157,22 +157,22 @@ export function Modal({
         aria-label={title ? undefined : "Dialog"}
       >
         {title ? (
-          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-            <h2 id={titleId} className="text-[14px] font-semibold text-fg">
+          <div className="flex items-center justify-between gap-3 px-5 pb-1 pt-4">
+            <h2 id={titleId} className="text-[15px] font-medium text-text-3">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="text-fg-4 hover:text-fg rounded p-1 -mr-1"
+              className="-mr-1.5 flex h-7 w-7 items-center justify-center rounded-full text-fg-4 transition-colors hover:bg-white/[0.06] hover:text-text-1"
               aria-label="Close"
             >
-              <Icon name="x" size={16} />
+              <Icon name="x" size={14} />
             </button>
           </div>
         ) : null}
-        <div className="px-4 py-4">{children}</div>
+        <div className="px-5 pb-5 pt-2">{children}</div>
         {footer ? (
-          <div className="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-solid border-stroke-1 bg-white/[0.015] px-5 py-3">
             {footer}
           </div>
         ) : null}
@@ -205,7 +205,7 @@ export function ConfirmDialog({
       open={open}
       onClose={onClose}
       title={title}
-      width={380}
+      width={400}
       footer={
         <>
           <button className="btn-ghost" onClick={onClose}>
@@ -221,7 +221,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-[13px] text-fg-2 leading-relaxed">{message}</p>
+      <p className="text-[13px] leading-relaxed text-fg-3">{message}</p>
     </Modal>
   );
 }
