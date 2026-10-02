@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useChatStore } from "@/lib/store/chat";
 import { useToast } from "@/lib/toast";
 import { timeAgo } from "@/lib/utils";
+import { stripMarkdown } from "@/lib/markdown";
 import { ConfirmDialog, EmptyState } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import type { Conversation } from "@/lib/types";
@@ -34,6 +35,30 @@ export default function ChatHistoryPage() {
     );
   }, [conversations, query]);
 
+  // Bucket by last activity so a long history scans like a timeline.
+  const groups = useMemo(() => {
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+    const day = 86_400_000;
+    const buckets: { label: string; items: Conversation[] }[] = [
+      { label: "Today", items: [] },
+      { label: "Yesterday", items: [] },
+      { label: "Previous 7 days", items: [] },
+      { label: "Older", items: [] },
+    ];
+    for (const c of filtered) {
+      const i =
+        c.updatedAt >= startOfToday
+          ? 0
+          : c.updatedAt >= startOfToday - day
+            ? 1
+            : c.updatedAt >= startOfToday - 7 * day
+              ? 2
+              : 3;
+      buckets[i]!.items.push(c);
+    }
+    return buckets.filter((b) => b.items.length > 0);
+  }, [filtered]);
+
   const doDelete = () => {
     if (!confirm) return;
     setBusy(true);
@@ -57,14 +82,14 @@ export default function ChatHistoryPage() {
         </div>
 
         {/* Filter */}
-        <div className="relative mb-4">
+        <div className="relative mb-6">
           <Icon
             name="search"
             size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-4"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-4"
           />
           <input
-            className="input pl-9"
+            className="input h-11 rounded-xl pl-10"
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -75,7 +100,7 @@ export default function ChatHistoryPage() {
 
         {/* List */}
         {conversations.length === 0 ? (
-          <div className="rounded-md border border-line bg-bg-2">
+          <div className="rounded-xl border border-solid border-stroke-1 bg-surface-4">
             <EmptyState
               icon="history"
               title="No conversations yet"
@@ -89,7 +114,7 @@ export default function ChatHistoryPage() {
             />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-md border border-line bg-bg-2">
+          <div className="rounded-xl border border-solid border-stroke-1 bg-surface-4">
             <EmptyState
               icon="search"
               title="No matches"
@@ -97,69 +122,69 @@ export default function ChatHistoryPage() {
             />
           </div>
         ) : (
-          <ul className="space-y-2">
-            {filtered.map((c) => {
-              // Count the same messages the preview considers real, or the row
-              // reads "No answer yet · 2 messages": the count included an
-              // empty assistant placeholder that the preview rightly ignored.
-              const n = c.messages.filter((m) => m.content.trim()).length;
-              const lastAssistant = [...c.messages]
-                .reverse()
-                .find((m) => m.role === "assistant" && m.content);
-              return (
-                <li key={c.id}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => router.push(`/chat/${c.id}`)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        router.push(`/chat/${c.id}`);
-                      }
-                    }}
-                    className="group flex cursor-pointer items-center gap-3 rounded-md border border-line bg-bg-2 px-4 py-3 transition-colors hover:border-stroke-3 hover:bg-bg-elev"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-accent-dim text-accent">
-                      <Icon name="msg" size={16} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-medium text-fg">
-                        {c.title}
-                      </p>
-                      <p className="mt-0.5 truncate text-[12px] text-fg-4">
-                        {lastAssistant
-                          ? lastAssistant.content
-                          : "No answer yet"}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="hidden text-right text-[11px] text-fg-4 sm:block">
-                        {n} {n === 1 ? "message" : "messages"}
-                        <span className="block text-fg-5">
-                          {timeAgo(c.updatedAt)}
-                        </span>
-                      </span>
-                      <span className="text-[11px] text-fg-5 sm:hidden">
-                        {timeAgo(c.updatedAt)}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirm(c);
-                        }}
-                        className="flex h-7 w-7 items-center justify-center rounded-sm text-fg-4 opacity-60 transition-colors hover:bg-bad-fill hover:text-bad group-hover:opacity-100"
-                        title="Delete conversation"
-                        aria-label={`Delete ${c.title}`}
-                      >
-                        <Icon name="trash" size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-7">
+            {groups.map((g) => (
+              <section key={g.label}>
+                <h2 className="mb-2 px-1 text-[11.5px] font-medium uppercase tracking-wider text-fg-4">
+                  {g.label}
+                </h2>
+                <ul className="divide-y divide-solid divide-stroke-1 overflow-hidden rounded-xl border border-solid border-stroke-1 bg-surface-4">
+                  {g.items.map((c) => {
+                    // Count the same messages the preview considers real, or the
+                    // row reads "No answer yet · 2 messages": the count included
+                    // an empty assistant placeholder that the preview ignored.
+                    const n = c.messages.filter((m) => m.content.trim()).length;
+                    const lastAssistant = [...c.messages]
+                      .reverse()
+                      .find((m) => m.role === "assistant" && m.content);
+                    const preview = lastAssistant ? stripMarkdown(lastAssistant.content) : "";
+                    return (
+                      <li key={c.id}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => router.push(`/chat/${c.id}`)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              router.push(`/chat/${c.id}`);
+                            }
+                          }}
+                          className="group flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-white/[0.03]"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[14px] font-medium text-text-1">{c.title}</p>
+                            <p className={preview ? "mt-0.5 truncate text-[12.5px] text-fg-4" : "mt-0.5 text-[12.5px] italic text-fg-4"}>
+                              {preview || "No answer yet"}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="whitespace-nowrap text-[11.5px] tabular-nums text-fg-4">
+                              <span className="hidden sm:inline">
+                                {n} {n === 1 ? "message" : "messages"} ·{" "}
+                              </span>
+                              {timeAgo(c.updatedAt)}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirm(c);
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-fg-4 opacity-0 transition-all hover:bg-bad-fill hover:text-bad focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
+                              title="Delete conversation"
+                              aria-label={`Delete ${c.title}`}
+                            >
+                              <Icon name="trash" size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
 
         {conversations.length > 0 ? (

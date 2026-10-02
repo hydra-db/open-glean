@@ -2402,7 +2402,7 @@ export function SourceGraph({
           </div>
           <button
             type="button"
-            className="btn btn-ghost"
+            className="btn-ghost"
             style={GRAPH_CONTROL_BUTTON_STYLE}
             onClick={resetGraphView}
           >
@@ -2411,7 +2411,7 @@ export function SourceGraph({
           {onClose && (
             <button
               type="button"
-              className="btn btn-ghost"
+              className="btn-ghost"
               style={GRAPH_CONTROL_BUTTON_STYLE}
               onClick={onClose}
             >
@@ -2839,7 +2839,7 @@ export function GraphSettingsPopover({
       >
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn-ghost"
           style={{ ...GRAPH_CONTROL_BUTTON_STYLE, flex: 1 }}
           onClick={handleResetView}
         >
@@ -2848,7 +2848,7 @@ export function GraphSettingsPopover({
         {externalOnClose && (
           <button
             type="button"
-            className="btn btn-ghost"
+            className="btn-ghost"
             style={{ ...GRAPH_CONTROL_BUTTON_STYLE, flex: 1 }}
             onClick={externalOnClose}
           >
@@ -2908,7 +2908,7 @@ export function GraphSettingsPopover({
     >
       <button
         type="button"
-        className="btn btn-ghost graph-toolbar-toggle !py-1.5 !px-3 !text-[12px]"
+        className="btn-ghost graph-toolbar-toggle !py-1.5 !px-3 !text-[12px]"
         title="Graph settings"
         aria-label="Graph settings"
         onClick={() => setOpen((v) => !v)}

@@ -22,7 +22,7 @@ import { Database } from "pixelarticons/react/Database";
 import { GitBranch } from "pixelarticons/react/GitBranch";
 import { PlugSolid } from "pixelarticons/react/PlugSolid";
 import { SettingsCog } from "pixelarticons/react/SettingsCog";
-import { Upload } from "pixelarticons/react/Upload";
+import { Plus } from "pixelarticons/react/Plus";
 
 type PixelIcon = (props: React.SVGProps<SVGSVGElement>) => React.JSX.Element;
 
@@ -102,19 +102,16 @@ export default function Shell({ children }: { children: ReactNode }) {
       <nav aria-label="Main" className="sidebar group/sidebar">
         <div className="sidebar-panel">
           <div className="sidebar-brand">
-            <Link href="/ask" title="Open Glean by Hydra DB">
-              {/* Collapsed: the bare mark. Expanded: the full wordmark. Both are
-                  transparent, so neither shows a tile behind it. */}
-              <img
-                src="/hydra-mark.png"
-                alt="Hydra DB"
-                className="brand-mark h-[26px] w-[26px]"
-              />
-              <img
-                src="/static/images/logos/hydradb-white.png"
-                alt="Hydra DB"
-                className="brand-wordmark h-[19px] w-auto"
-              />
+            <Link href="/ask" aria-label="Open Glean home">
+              {/* The mark sits in the same 44px box as the nav icons, so the
+                  logo lines up with them in both states; the name slides in
+                  beside it when the rail expands, like the nav labels. */}
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                <img src="/hydra-mark.png" alt="" className="h-[24px] w-[24px]" />
+              </span>
+              <span className="rail-label pointer-events-none hidden whitespace-nowrap font-pixel text-[16px] leading-none text-text-3">
+                Open Glean
+              </span>
             </Link>
           </div>
 
@@ -222,22 +219,25 @@ export default function Shell({ children }: { children: ReactNode }) {
 /**
  * The rail's primary action. It opens the add-context dialog directly rather
  * than landing on the Context list, since adding is why someone clicks it.
- * Collapsed it is a solid square; expanded it reads "Add context" with the
- * kinds of thing that can be added.
+ * A quiet outlined row, not a filled block: it should be the first thing you
+ * find, not the loudest thing on screen.
  */
 function AddContextButton() {
   return (
     <Link
       href="/context?add=1"
-      title="Add context"
-      className="group/add relative z-10 mb-1 flex h-11 w-full shrink-0 items-center overflow-hidden rounded-lg bg-text-1 text-[#0a0a0b] transition-colors hover:bg-text-3"
+      className="group/add relative z-10 mb-1 flex h-11 w-full shrink-0 items-center rounded-lg border border-solid border-stroke-1 bg-white/[0.03] text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.07]"
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-        <Upload width={20} height={20} aria-hidden className="transition-transform duration-200 group-hover/add:-translate-y-0.5" />
+      <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center">
+        <Plus
+          width={20}
+          height={20}
+          aria-hidden
+          className="transition-transform duration-200 group-hover/add:rotate-90"
+        />
       </span>
-      <span className="rail-label pointer-events-none hidden min-w-0 leading-tight">
-        <span className="block whitespace-nowrap text-sm font-medium">Add context</span>
-        <span className="block whitespace-nowrap text-[11px] text-[#0a0a0b]/60">Files, notes, links</span>
+      <span className="rail-label pointer-events-none hidden whitespace-nowrap text-sm font-medium">
+        Add context
       </span>
       <span className="sr-only">Add context</span>
     </Link>
@@ -261,7 +261,6 @@ function RailLink({
     <Link
       ref={linkRef}
       href={href}
-      title={label}
       aria-current={active ? "page" : undefined}
       className={cn(
         // One 44px-tall row. The icon lives in a fixed 44px box so it stays put
