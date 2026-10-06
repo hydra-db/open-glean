@@ -11,6 +11,7 @@
 import "server-only";
 import { getSession } from "@/lib/session";
 import { assertSafeLlmUrl } from "@/lib/safeUrl";
+import { fetchWithRetry } from "@/lib/retry";
 
 export const DEFAULT_LLM_BASE = "https://openrouter.ai/api/v1";
 
@@ -128,20 +129,25 @@ async function chatCompletions(
   // indefinitely. Whichever fires first wins.
   const deadline = AbortSignal.timeout(LLM_TIMEOUT_MS);
   const combined = signal ? AbortSignal.any([signal, deadline]) : deadline;
-  const res = await fetch(`${creds.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${creds.apiKey}`,
+  // Transient 429/5xx responses are retried with backoff (lib/retry.ts); the
+  // deadline and the caller's abort still cut a retry short.
+  const res = await fetchWithRetry(
+    `${creds.baseUrl}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${creds.apiKey}`,
+      },
+      body: JSON.stringify({ model: creds.model, ...body }),
+      // Do NOT follow redirects: the base URL was SSRF-validated, but a public
+      // endpoint that 3xx-redirects /chat/completions to a private host would
+      // otherwise be followed to that unvalidated destination. A completion
+      // POST never legitimately redirects, so treat one as an error.
+      redirect: "manual",
     },
-    body: JSON.stringify({ model: creds.model, ...body }),
-    signal: combined,
-    // Do NOT follow redirects: the base URL was SSRF-validated, but a public
-    // endpoint that 3xx-redirects /chat/completions to a private host would
-    // otherwise be followed to that unvalidated destination. A completion
-    // POST never legitimately redirects, so treat one as an error.
-    redirect: "manual",
-  });
+    { signal: combined },
+  );
   if (res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400)) {
     throw new Error("LLM endpoint attempted a redirect, which is not allowed.");
   }
