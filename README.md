@@ -29,8 +29,9 @@ the browser. You can also run it yourself with your own Hydra DB key.
 - **Mindmap**: the knowledge graph Hydra builds from your context.
 - **Integrations**: connect Hydra's connectors, verify credentials, discover
   resources, and start syncing, without leaving the app.
-- **Bring your own model**: any OpenAI-compatible endpoint. A searchable
-  OpenRouter model picker with favourites is built in.
+- **Bring your own model**: any OpenAI-compatible endpoint, or Claude directly
+  through the native Anthropic Messages API. A searchable OpenRouter model
+  picker with favourites is built in.
 
 ## Getting started
 
@@ -81,6 +82,19 @@ Browser ──► Next.js proxy (/api/hydra/*) ──► @hydradb/sdk ──► 
 - Web search is served by your LLM provider's web plugin (OpenRouter). Its
   citations appear alongside the Hydra sources.
 
+### Using Claude directly
+
+Set the base URL to `https://api.anthropic.com` (in Settings, or
+`OPEN_GLEAN_LLM_BASE_URL`), paste an Anthropic API key, and use a Claude model
+id such as `claude-opus-5-5`. The provider is chosen from the base URL host, so
+the key stays pinned to the host it was stored with. On this path:
+
+- Requests go through the official `@anthropic-ai/sdk`, not `/chat/completions`.
+- Web search uses Anthropic's server-side web search tool, and its results fill
+  the same sources panel.
+- `temperature` is not sent, because current Claude models reject sampling
+  parameters.
+
 ## Environment & key security
 
 API keys are **not stored in the browser**. When you connect in Settings, the
@@ -103,7 +117,7 @@ sent there in an `Authorization` header.
 | `MONGODB_DB` | Database name for chats (defaults to `open_glean`). |
 | `OPENROUTER_API_KEY` | Optional server-level LLM key. When set, users need not enter their own. |
 | `OPEN_GLEAN_LLM_MODEL` | Default answer model id, e.g. `openai/gpt-4o-mini`. No built-in default. Without it (or a per-user model), answers are unavailable. |
-| `OPEN_GLEAN_LLM_BASE_URL` | Optional OpenAI-compatible endpoint for the server-level key (defaults to OpenRouter) |
+| `OPEN_GLEAN_LLM_BASE_URL` | Optional endpoint for the server-level key (defaults to OpenRouter). Any OpenAI-compatible URL, or `https://api.anthropic.com` for Claude through the native API. |
 | `OPEN_GLEAN_ALLOW_PRIVATE_LLM_URL` | Allow an LLM base URL on a private or loopback address, for a local model such as Ollama or LM Studio. Off by default. It permits plaintext `http:` on a private address only. A public host still requires `https:`, and non-http schemes are rejected. |
 | `MONGODB_PROXY_KEY` | Shared secret for the Lambda proxy. The Lambda reads the same value as `PROXY_KEY`; the two names must match. |
 | `OPEN_GLEAN_MAX_CONCURRENT_RESEARCH` | Concurrent Deep Research runs per instance (default 3). Each run costs many LLM and retrieval calls |
@@ -116,8 +130,9 @@ sent there in an `Authorization` header.
 
 ## Stack
 
-Next.js 16, React 19, Tailwind CSS v4, and `@hydradb/sdk`. No other runtime
-dependency for data or AI.
+Next.js 16, React 19, Tailwind CSS v4, `@hydradb/sdk`, and `@anthropic-ai/sdk`
+for the native Claude path. OpenAI-compatible providers are called with plain
+`fetch`.
 
 ## License
 
