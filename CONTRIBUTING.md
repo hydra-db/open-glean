@@ -13,6 +13,33 @@ npm run dev
 Chat persistence needs MongoDB. Without it the app degrades to localStorage and
 shows a banner saying so, which is fine for most work.
 
+## How contributions are gated
+
+Contributions follow a gated flow to keep review load sustainable. Join us on
+[Discord](https://discord.gg/YPtwenvxY8): discussing a PR, getting it reviewed
+and merged, and getting an open PR closed all happen in the `#pr-discussion`
+channel.
+
+```
+open an issue  ->  get vouched  ->  issue /approved  ->  open a PR  ->  review & merge
+   (anyone)        (maintainer)       (maintainer)        (you)
+```
+
+1. Open an issue describing the bug or change. Anyone can open and discuss issues.
+2. Get vouched. A maintainer vouches you with `/vouch @your-github-handle` on an issue (each maintainer may vouch at most 5 people). Maintainers are implicitly vouched. Ask on Discord.
+3. A maintainer runs `/approved` on the issue once the discussion settles (only if its author is vouched).
+4. Open a PR that links the approved issue (`Closes #123`). A PR with no linked, approved issue is closed automatically.
+
+Pull request rules:
+
+- At most 3 open PRs per person. The newest over that is closed; get an earlier one merged or closed first (ask in `#pr-discussion` on Discord).
+- Keep PRs small and scoped to the approved issue.
+- Fill in the AI-assistance section of the PR template and do not remove it.
+- Each PR gets a single thread in `#pr-discussion`.
+
+The roster lives in [`.github/vouched.json`](.github/vouched.json). Anyone with
+write access is treated as a maintainer.
+
 ## Before you open a pull request
 
 ```bash

@@ -1,0 +1,71 @@
+name: PR gate
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const author = pr.user.login;
+            const number = pr.number;
+            const body = pr.body || '';
+            const reply = (msg) => github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: number, body: msg });
+            const got = await github.rest.repos.getContent({
+              owner: context.repo.owner, repo: context.repo.repo, path: '.github/vouched.json', ref: context.payload.repository.default_branch });
+            const roster = JSON.parse(Buffer.from(got.data.content, 'base64').toString('utf8'));
+            // Anyone with write access (the backend team) counts as a maintainer.
+            const isTeam = async (login) => (roster.maintainers || []).includes(login) ||
+              ['admin', 'write'].includes(await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner, repo: context.repo.repo, username: login }).then(r => r.data.permission, () => 'none'));
+            const OVERRIDE = 'gate-override';
+
+            if (pr.user.type === 'Bot') { core.info('Bot PR, exempt.'); return; }
+            // The gate went live when #230 merged; older PRs are exempt.
+            if (new Date(pr.created_at) < new Date('2026-10-14T00:00:00Z')) { core.info('Opened before the gate, exempt.'); return; }
+            if ((pr.labels || []).some(l => l.name === OVERRIDE)) { core.info(`Has ${OVERRIDE}, exempt.`); return; }
+            if (context.payload.action === 'reopened' && await isTeam(context.payload.sender.login)) {
+              // Persist the override so later pushes from the author do not close the PR again.
+              await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: number, labels: [OVERRIDE] });
+              core.info(`Reopened by a maintainer, labelled ${OVERRIDE}.`);
+              return;
+            }
+            const isMaintainer = await isTeam(author);
+
+            const problems = [];
+            const refs = [...body.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s+#(\d+)/gi)].map(x => parseInt(x[1], 10));
+            let hasApproved = false;
+            for (const n of refs) {
+              try {
+                const iss = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: n });
+                if (iss.data.pull_request) continue;
+                if ((iss.data.labels || []).some(l => (l.name || l) === 'approved-for-pr')) { hasApproved = true; break; }
+              } catch (e) { }
+            }
+            if (!hasApproved && !isMaintainer) {
+              await reply(`This PR has no linked **approved** issue. Open an issue, get it discussed and \`/approved\` by a maintainer, then link it here with \`Closes #N\`. Closing for now; reopen once linked. (Fastest help: the #pr-discussion channel on Discord.)\n\nMaintainers: reopen this PR to override the gate (it gets the \`${OVERRIDE}\` label).`);
+              await github.rest.pulls.update({ owner: context.repo.owner, repo: context.repo.repo, pull_number: number, state: 'closed' });
+              core.setFailed('No linked approved issue.');
+              return;
+            }
+            if (!/##\s*AI assistance/i.test(body)) {
+              problems.push('The **AI assistance** section is missing from the PR description. Restore it from the PR template and disclose whether AI tools were used.');
+            }
+
+            if (problems.length) {
+              await reply(problems.join('\n\n'));
+              core.setFailed('PR template requirements not met.');
+              return;
+            }
+            core.info('PR gate passed.');
