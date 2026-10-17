@@ -15,30 +15,34 @@ shows a banner saying so, which is fine for most work.
 
 ## How contributions are gated
 
-Contributions follow a gated flow to keep review load sustainable. Join us on
-[Discord](https://discord.gg/YPtwenvxY8): discussing a PR, getting it reviewed
-and merged, and getting an open PR closed all happen in the `#pr-discussion`
-channel.
+We use an issue-first flow, so that we can review each change. Talk to us on
+[Discord](https://discord.gg/HcBKJHXmnu). Use the `#pr-discussion` channel to
+ask about a PR, to ask for a review, or to ask us to close a PR.
 
 ```
-open an issue  ->  get vouched  ->  issue /approved  ->  open a PR  ->  review & merge
-   (anyone)        (maintainer)       (maintainer)        (you)
+open an issue  ->  issue /approved  ->  open a PR  ->  review & merge
+   (anyone)         (maintainer)          (you)
 ```
 
-1. Open an issue describing the bug or change. Anyone can open and discuss issues.
-2. Get vouched. A maintainer vouches you with `/vouch @your-github-handle` on an issue (each maintainer may vouch at most 5 people). Maintainers are implicitly vouched. Ask on Discord.
-3. A maintainer runs `/approved` on the issue once the discussion settles (only if its author is vouched).
-4. Open a PR that links the approved issue (`Closes #123`). A PR with no linked, approved issue is closed automatically.
+1. Open an issue. Describe the bug or the change. Anyone can open an issue and discuss it.
+2. Wait until a maintainer approves the issue with `/approved`.
+3. Open a PR. Link the approved issue with `Closes #123`.
+4. Keep the PR small. Change only what the issue asks for.
+
+Only the issue author or a person assigned to the issue can open the PR for it.
+To work on an issue that another person opened, comment on the issue. Ask a
+maintainer to assign it to you. If a PR does not link an approved issue that is
+yours, a bot closes it.
 
 Pull request rules:
 
-- At most 3 open PRs per person. The newest over that is closed; get an earlier one merged or closed first (ask in `#pr-discussion` on Discord).
-- Keep PRs small and scoped to the approved issue.
-- Fill in the AI-assistance section of the PR template and do not remove it.
-- Each PR gets a single thread in `#pr-discussion`.
+- Keep a maximum of 3 open PRs. If you open more, a bot closes your newest PR. Get an earlier PR merged or closed first. To ask, post in `#pr-discussion` on Discord.
+- Fill in the "AI Assistance" section of the PR template. Do not remove it.
+- Each PR has one thread in `#pr-discussion`.
 
-The roster lives in [`.github/vouched.json`](.github/vouched.json). Anyone with
-write access is treated as a maintainer.
+A maintainer is a person in the `maintainers` list of
+[`.github/vouched.json`](.github/vouched.json), or a person with write access
+to this repository.
 
 ## Before you open a pull request
 

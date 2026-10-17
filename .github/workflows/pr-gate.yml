@@ -46,15 +46,22 @@ jobs:
             const problems = [];
             const refs = [...body.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s+#(\d+)/gi)].map(x => parseInt(x[1], 10));
             let hasApproved = false;
+            let notAssigned = null;
             for (const n of refs) {
               try {
                 const iss = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: n });
                 if (iss.data.pull_request) continue;
-                if ((iss.data.labels || []).some(l => (l.name || l) === 'approved-for-pr')) { hasApproved = true; break; }
+                if (!(iss.data.labels || []).some(l => (l.name || l) === 'approved-for-pr')) continue;
+                // Only the issue author or an assignee can open the PR for an approved issue.
+                if (iss.data.user?.login === author || (iss.data.assignees || []).some(a => a.login === author)) { hasApproved = true; break; }
+                notAssigned = n;
               } catch (e) { }
             }
             if (!hasApproved && !isMaintainer) {
-              await reply(`This PR has no linked **approved** issue. Open an issue, get it discussed and \`/approved\` by a maintainer, then link it here with \`Closes #N\`. Closing for now; reopen once linked. (Fastest help: the #pr-discussion channel on Discord.)\n\nMaintainers: reopen this PR to override the gate (it gets the \`${OVERRIDE}\` label).`);
+              const why = notAssigned
+                ? `Issue #${notAssigned} is approved, but you are not assigned to it. Comment on the issue and ask a maintainer to assign you. Then reopen this PR.`
+                : `This PR has no linked **approved** issue. Open an issue, get it discussed and \`/approved\` by a maintainer, then link it here with \`Closes #N\`. Closing for now; reopen once linked.`;
+              await reply(`${why} (Fastest help: the #pr-discussion channel on Discord.)\n\nMaintainers: reopen this PR to override the gate (it gets the \`${OVERRIDE}\` label).`);
               await github.rest.pulls.update({ owner: context.repo.owner, repo: context.repo.repo, pull_number: number, state: 'closed' });
               core.setFailed('No linked approved issue.');
               return;

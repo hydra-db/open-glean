@@ -61,7 +61,7 @@ jobs:
                 .slice(0, open.length - MAX);
               for (const n of toClose) {
                 await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: n,
-                  body: `You have ${open.length} open PRs, over the limit of ${MAX}. Closing this one, your newest; please get an existing PR merged or closed first. The fastest way to get an open PR closed is to ask in the #pr-discussion channel on [Discord](https://discord.gg/YPtwenvxY8).` });
+                  body: `You have ${open.length} open PRs, over the limit of ${MAX}. Closing this one, your newest; please get an existing PR merged or closed first. The fastest way to get an open PR closed is to ask in the #pr-discussion channel on [Discord](https://discord.gg/HcBKJHXmnu).` });
                 await github.rest.pulls.update({ owner: context.repo.owner, repo: context.repo.repo, pull_number: n, state: 'closed' });
               }
             } else {
@@ -98,7 +98,7 @@ jobs:
                 const rank = i + 1;
                 const body = over <= 0
                   ? `This is PR ${rank} of ${MAX} you may keep open at a time, @${a}.`
-                  : `⚠️ @${a}, you have ${total} open PRs, over the limit of ${MAX}. This is PR ${rank}. **Please close at least ${over} of your open PRs** to get within the limit, or new PRs will be closed automatically. Fastest way to close one: ask in the #pr-discussion channel on [Discord](https://discord.gg/YPtwenvxY8).`;
+                  : `⚠️ @${a}, you have ${total} open PRs, over the limit of ${MAX}. This is PR ${rank}. **Please close at least ${over} of your open PRs** to get within the limit, or new PRs will be closed automatically. Fastest way to close one: ask in the #pr-discussion channel on [Discord](https://discord.gg/HcBKJHXmnu).`;
                 await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: nums[i], body });
               }
             }

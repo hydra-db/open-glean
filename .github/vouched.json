@@ -1,5 +1,5 @@
 {
-  "_comment": "Contribution roster. 'maintainers' may run /vouch and /approved. 'vouched' maps each vouched login to the maintainer who vouched them. See CONTRIBUTING.md.",
+  "_comment": "Contribution roster. 'maintainers' can run /approved and override the PR gates. Anyone with write access to this repository is also a maintainer. See CONTRIBUTING.md.",
   "maintainers": [
     "arrry-hydraDB",
     "abhishekt-hydra",
@@ -8,6 +8,5 @@
     "vyomgoyal",
     "saivenu-hydradb",
     "tushar-hydradb"
-  ],
-  "vouched": {}
+  ]
 }

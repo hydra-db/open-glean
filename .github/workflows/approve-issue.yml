@@ -28,7 +28,6 @@ jobs:
             const got = await github.rest.repos.getContent({ owner: context.repo.owner, repo: context.repo.repo, path: '.github/vouched.json' });
             const roster = JSON.parse(Buffer.from(got.data.content, 'base64').toString('utf8'));
             const maintainers = roster.maintainers || [];
-            const vouched = roster.vouched || {};
             // Anyone with write access (the backend team) counts as a maintainer.
             const isTeam = async (login) => maintainers.includes(login) ||
               ['admin', 'write'].includes(await github.rest.repos.getCollaboratorPermissionLevel({
@@ -39,12 +38,6 @@ jobs:
               await reply(`@${commenter} only maintainers can \`/approved\` an issue.`);
               return;
             }
-            const isVouched = Object.prototype.hasOwnProperty.call(vouched, author) || await isTeam(author);
-            if (!isVouched) {
-              await react('-1');
-              await reply(`This issue cannot be approved yet: its author @${author} has not been vouched. A maintainer must \`/vouch @${author}\` first (see CONTRIBUTING.md).`);
-              return;
-            }
 
             try {
               await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name: LABEL });
@@ -53,4 +46,4 @@ jobs:
             }
             await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number, labels: [LABEL] });
             await react('+1');
-            await reply(`Approved by @${commenter}. @${author} may now open a PR that links this issue with \`Closes #${issue_number}\` (max 3 open PRs at a time).`);
+            await reply(`Approved by @${commenter}. @${author} or an assignee of this issue can now open a PR that links it with \`Closes #${issue_number}\` (max 3 open PRs at a time).`);
