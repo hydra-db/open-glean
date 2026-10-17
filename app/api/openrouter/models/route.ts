@@ -16,6 +16,7 @@
  * to OpenRouter.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { fetchWithRetry } from "@/lib/retry";
 import { getSession } from "@/lib/session";
 import { resolveModelSource } from "./resolve";
 
@@ -47,14 +48,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${base}/models`, {
-      headers: key ? { authorization: `Bearer ${key}` } : {},
-      signal: AbortSignal.timeout(12_000),
-      cache: "no-store",
-      // The base URL was validated, but a public host that 3xx-redirects could
-      // otherwise carry the key to an unvalidated destination.
-      redirect: "manual",
-    });
+    // One retry is enough for a model list; the 12s budget covers both tries.
+    const res = await fetchWithRetry(
+      `${base}/models`,
+      {
+        headers: key ? { authorization: `Bearer ${key}` } : {},
+        cache: "no-store",
+        // The base URL was validated, but a public host that 3xx-redirects could
+        // otherwise carry the key to an unvalidated destination.
+        redirect: "manual",
+      },
+      { retries: 1, signal: AbortSignal.timeout(12_000) },
+    );
     if (res.status >= 300 && res.status < 400) {
       return NextResponse.json(
         { error: "Model endpoint attempted a redirect, which is not allowed." },
