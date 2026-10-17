@@ -687,7 +687,7 @@ export default function Page() {
       <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[26px] font-bold tracking-tight text-fg">Integrations</h1>
+          <h1 className="font-pixel text-[28px] font-normal leading-tight text-text-3">Integrations</h1>
           <p className="mt-1.5 text-[13px] text-fg-3">
             Connect the apps you work in. Hydra syncs them into your database.
           </p>
@@ -816,7 +816,7 @@ export default function Page() {
                       setDrawer(c);
                     }
                   }}
-                  className="card flex cursor-pointer flex-col p-3.5 transition-colors hover:border-line-2"
+                  className="card flex cursor-pointer flex-col p-3.5 transition-colors hover:border-stroke-3"
                 >
                   <div className="flex items-center gap-2.5">
                     <ProviderLogo id={c.provider} size={34} />
@@ -858,7 +858,7 @@ export default function Page() {
 
                   <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-3">
                     <button
-                      className="inline-flex h-7 items-center gap-1 rounded-sm border border-line bg-bg-2 px-2.5 text-[11.5px] font-medium text-fg-2 transition-colors hover:border-line-2 hover:bg-inset hover:text-fg"
+                      className="inline-flex h-7 items-center gap-1 rounded-sm border border-line bg-bg-2 px-2.5 text-[11.5px] font-medium text-fg-2 transition-colors hover:border-stroke-3 hover:bg-inset hover:text-fg"
                       disabled={isSyncingNow}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -955,7 +955,7 @@ export default function Page() {
                     </span>
                   ) : null}
                   {entry.is_beta ? (
-                    <span className="rounded-xs border border-warn/40 bg-warn-fill px-1.5 py-0.5 text-[10.5px] font-medium text-warn">
+                    <span className="rounded-xs border border-warn/30 bg-warn-fill px-1.5 py-0.5 text-[10.5px] font-medium text-warn">
                       Beta
                     </span>
                   ) : null}
@@ -1030,7 +1030,7 @@ export default function Page() {
         }
       >
         {!database ? (
-          <div className="mb-3 flex items-start gap-2 rounded-sm border border-warn/35 bg-warn-fill px-3 py-2.5">
+          <div className="mb-3 flex items-start gap-2 rounded-sm border border-warn/30 bg-warn-fill px-3 py-2.5">
             <Icon name="alert" size={13} className="mt-0.5 shrink-0 text-warn" />
             <p className="text-[12px] leading-relaxed text-warn">
               Set your Hydra database in{" "}
@@ -1120,7 +1120,7 @@ export default function Page() {
                 {pickerEntries.map((entry) => (
                   <button
                     key={entry.provider}
-                    className="card flex flex-col items-center gap-1.5 p-3 transition-colors hover:border-accent-line"
+                    className="card flex flex-col items-center gap-1.5 p-3 transition-colors hover:border-stroke-3"
                     onClick={() => pickProvider(entry)}
                   >
                     <ProviderLogo id={entry.provider} size={32} />
@@ -1134,7 +1134,7 @@ export default function Page() {
                         </span>
                       ) : null}
                       {entry.is_beta ? (
-                        <span className="rounded-xs border border-warn/40 bg-warn-fill px-1.5 py-0.5 text-[9.5px] font-medium text-warn">
+                        <span className="rounded-xs border border-warn/30 bg-warn-fill px-1.5 py-0.5 text-[9.5px] font-medium text-warn">
                           Beta
                         </span>
                       ) : null}
@@ -1440,7 +1440,7 @@ export default function Page() {
                         <p>{Number(drawer.active_resource_count)} resources</p>
                       ) : null}
                       {drawer.last_error ? (
-                        <p className="rounded-md border border-solid border-error-1/30 bg-bad-fill px-2.5 py-2 text-error-1">
+                        <p className="rounded-md border border-solid border-bad/30 bg-bad-fill px-2.5 py-2 text-error-1">
                           {drawer.last_error}
                         </p>
                       ) : null}

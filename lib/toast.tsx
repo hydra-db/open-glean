@@ -73,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             className={`animate-slideUp pointer-events-auto w-full md:w-[340px] rounded border px-3.5 py-2.5 shadow-lg backdrop-blur-sm ${
               t.kind === "error"
-                ? "bg-[#2a1212]/95 border-[#5c2323]"
+                ? "bg-[#2a1212]/95 border-bad/30"
                 : t.kind === "success"
                   ? "bg-bg-elev/95 border-line"
                   : t.kind === "info"

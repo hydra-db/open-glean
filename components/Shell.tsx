@@ -16,14 +16,26 @@ import { Icon } from "@/components/Icon";
 import { ConnectGate } from "@/components/ConnectGate";
 import { ScopeSwitcher } from "@/components/ScopeSwitcher";
 import { SaveStatusBanner } from "@/components/SaveStatusBanner";
+import { Home } from "pixelarticons/react/Home";
+import { MessageText } from "pixelarticons/react/MessageText";
+import { Database } from "pixelarticons/react/Database";
+import { GitBranch } from "pixelarticons/react/GitBranch";
+import { PlugSolid } from "pixelarticons/react/PlugSolid";
+import { SettingsCog } from "pixelarticons/react/SettingsCog";
+import { Plus } from "pixelarticons/react/Plus";
 
-export const NAV_ITEMS = [
-  { href: "/ask", label: "Home", icon: "home", match: ["/ask"] },
-  { href: "/chat-history", label: "Chats", icon: "history", match: ["/chat-history", "/chat"] },
-  { href: "/context", label: "Context", icon: "layers", match: ["/context"] },
-  { href: "/mindmap", label: "Mindmap", icon: "graph", match: ["/mindmap"] },
-  { href: "/integrations", label: "Integrations", icon: "plug", match: ["/integrations"] },
-  { href: "/settings", label: "Settings", icon: "settings", match: ["/settings"] },
+type PixelIcon = (props: React.SVGProps<SVGSVGElement>) => React.JSX.Element;
+
+// Pixel-art icons (pixelarticons, MIT) to match the Geist Pixel type. They
+// are drawn on a 24px grid, so they render at 24px or a multiple to stay
+// crisp.
+export const NAV_ITEMS: { href: string; label: string; icon: PixelIcon; match: string[] }[] = [
+  { href: "/ask", label: "Home", icon: Home, match: ["/ask"] },
+  { href: "/chat-history", label: "Chats", icon: MessageText, match: ["/chat-history", "/chat"] },
+  { href: "/context", label: "Context", icon: Database, match: ["/context"] },
+  { href: "/mindmap", label: "Mindmap", icon: GitBranch, match: ["/mindmap"] },
+  { href: "/integrations", label: "Integrations", icon: PlugSolid, match: ["/integrations"] },
+  { href: "/settings", label: "Settings", icon: SettingsCog, match: ["/settings"] },
 ];
 
 export default function Shell({ children }: { children: ReactNode }) {
@@ -90,19 +102,16 @@ export default function Shell({ children }: { children: ReactNode }) {
       <nav aria-label="Main" className="sidebar group/sidebar">
         <div className="sidebar-panel">
           <div className="sidebar-brand">
-            <Link href="/ask" title="Open Glean by Hydra DB">
-              {/* Collapsed: the bare mark. Expanded: the full wordmark. Both are
-                  transparent, so neither shows a tile behind it. */}
-              <img
-                src="/hydra-mark.png"
-                alt="Hydra DB"
-                className="brand-mark h-[26px] w-[26px]"
-              />
-              <img
-                src="/static/images/logos/hydradb-white.png"
-                alt="Hydra DB"
-                className="brand-wordmark h-[19px] w-auto"
-              />
+            <Link href="/ask" aria-label="Open Glean home">
+              {/* The mark sits in the same 44px box as the nav icons, so the
+                  logo lines up with them in both states; the name slides in
+                  beside it when the rail expands, like the nav labels. */}
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                <img src="/hydra-mark.png" alt="" className="h-[24px] w-[24px]" />
+              </span>
+              <span className="rail-label pointer-events-none hidden whitespace-nowrap font-pixel text-[16px] leading-none text-text-3">
+                Open Glean
+              </span>
             </Link>
           </div>
 
@@ -111,19 +120,13 @@ export default function Shell({ children }: { children: ReactNode }) {
             <span
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-x-0 rounded-lg bg-surface-8",
+                "pointer-events-none absolute inset-x-0 rounded-lg bg-white/[0.07]",
                 navInd.height === 0 ? "opacity-0" : "opacity-100",
                 navReady && "transition-all duration-200 ease-out",
               )}
               style={{ top: navInd.top, height: navInd.height }}
             />
-            <RailLink
-              href="/context"
-              label="Upload context"
-              icon="upload"
-              active={active === "/context"}
-              pill
-            />
+            <AddContextButton />
             <div className="my-2 h-px w-full shrink-0 bg-stroke-1" />
             {NAV_ITEMS.map((item) => (
               <RailLink
@@ -160,7 +163,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/context?add=1"
-                className="hidden h-8 items-center gap-1.5 rounded-full bg-brand-1 px-3.5 text-xs font-medium text-[#140a03] shadow-sm transition-all duration-150 hover:-translate-y-px hover:bg-accent-2 hover:shadow-md active:translate-y-0 sm:flex"
+                className="hidden h-8 items-center gap-1.5 rounded-full border border-solid border-stroke-1 px-3.5 text-xs font-medium text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.06] sm:flex"
               >
                 <Icon name="plus" size={13} />
                 <span>Add context</span>
@@ -179,7 +182,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         >
           {!ready ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-stroke-1 border-t-brand-1" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-stroke-1 border-t-text-1" />
             </div>
           ) : showApp ? (
             children
@@ -204,7 +207,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               active === item.href ? "text-brand-1" : "text-text-2",
             )}
           >
-            <Icon name={item.icon} size={18} />
+            <item.icon width={20} height={20} aria-hidden />
             {item.label}
           </Link>
         ))}
@@ -213,48 +216,70 @@ export default function Shell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The rail's primary action. It opens the add-context dialog directly rather
+ * than landing on the Context list, since adding is why someone clicks it.
+ * A quiet outlined row, not a filled block: it should be the first thing you
+ * find, not the loudest thing on screen.
+ */
+function AddContextButton() {
+  return (
+    <Link
+      href="/context?add=1"
+      className="group/add relative z-10 mb-1 flex h-11 w-full shrink-0 items-center rounded-lg border border-solid border-stroke-1 bg-white/[0.03] text-text-1 transition-colors hover:border-stroke-3 hover:bg-white/[0.07]"
+    >
+      <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center">
+        <Plus
+          width={20}
+          height={20}
+          aria-hidden
+          className="transition-transform duration-200 group-hover/add:rotate-90"
+        />
+      </span>
+      <span className="rail-label pointer-events-none hidden whitespace-nowrap text-sm font-medium">
+        Add context
+      </span>
+      <span className="sr-only">Add context</span>
+    </Link>
+  );
+}
+
 function RailLink({
   href,
   label,
-  icon,
+  icon: IconCmp,
   active,
-  pill = false,
   linkRef,
 }: {
   href: string;
   label: string;
-  icon: string;
+  icon: PixelIcon;
   active: boolean;
-  pill?: boolean;
   linkRef?: (el: HTMLAnchorElement | null) => void;
 }) {
   return (
     <Link
       ref={linkRef}
       href={href}
-      title={label}
       aria-current={active ? "page" : undefined}
       className={cn(
         // One 44px-tall row. The icon lives in a fixed 44px box so it stays put
         // as the rail expands and the label appears beside it on the same line.
         // The active fill is a shared sliding indicator behind the links, so the
-        // link itself only sets text colour and the accent bar.
-        "rail-link group/link relative z-10 flex h-11 w-full shrink-0 items-center rounded-lg bg-transparent text-text-2 transition-colors",
-        pill
-          ? "mb-1 border border-solid border-stroke-1 bg-surface-4 text-text-1 hover:border-stroke-2 hover:bg-surface-7"
-          : "hover:text-text-1",
-        // Hover fill only on the inactive items; the active one already has the
-        // sliding indicator behind it.
-        !pill && !active && "hover:bg-surface-7/60",
-        active && !pill && "text-text-1",
+        // link itself only sets colours.
+        "rail-link group/link relative z-10 flex h-11 w-full shrink-0 items-center rounded-lg bg-transparent text-fg-4 transition-colors",
+        active ? "text-text-3" : "hover:bg-white/[0.04] hover:text-text-1",
       )}
     >
-      {/* Accent left-edge marks the active page. */}
-      {active && !pill && (
-        <span className="absolute left-0 top-1/2 z-10 h-5 w-[3px] -translate-y-1/2 rounded-full bg-brand-1" />
-      )}
       <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-        <Icon name={icon} size={19} className="shrink-0" />
+        {/* The active page's icon takes the brand colour, so the current page
+            reads at a glance without an extra marker. */}
+        <IconCmp
+          width={24}
+          height={24}
+          aria-hidden
+          className={cn("shrink-0 transition-colors", active && "text-brand-1")}
+        />
       </span>
       <span className="rail-label pointer-events-none hidden whitespace-nowrap text-sm font-medium">
         {label}

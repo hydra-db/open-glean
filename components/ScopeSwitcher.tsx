@@ -176,7 +176,7 @@ export function ScopeSwitcher({ className = "" }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 items-center gap-2 rounded-full border border-solid border-stroke-1 bg-surface-2 px-3 text-[11.5px] text-text-1 transition-colors hover:border-stroke-2 hover:bg-surface-3"
+        className="flex h-8 items-center gap-2 rounded-full border border-solid border-stroke-1 bg-surface-2 px-3 text-[11.5px] text-text-1 transition-colors hover:border-stroke-3 hover:bg-surface-3"
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -242,12 +242,12 @@ export function ScopeSwitcher({ className = "" }: { className?: string }) {
                       onClick={() => handlePickDb(d.tenant_id)}
                       className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
                         active
-                          ? "bg-accent-dim font-medium text-brand-1"
+                          ? "bg-accent-dim font-medium text-text-1"
                           : "text-text-2 hover:bg-surface-2 hover:text-text-1"
                       }`}
                     >
                       <span className="truncate font-mono">{d.tenant_id}</span>
-                      {active && <Icon name="check" size={12} className="shrink-0 text-brand-1" />}
+                      {active && <Icon name="check" size={12} className="shrink-0 text-text-1" />}
                     </button>
                   );
                 })}
@@ -281,13 +281,13 @@ export function ScopeSwitcher({ className = "" }: { className?: string }) {
                     onClick={() => setConfig({ collection: undefined, collections: undefined })}
                     className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
                       selectedCols.length === 0
-                        ? "bg-accent-dim font-medium text-brand-1"
+                        ? "bg-accent-dim font-medium text-text-1"
                         : "text-text-2 hover:bg-surface-2 hover:text-text-1"
                     }`}
                   >
                     <span>All collections</span>
                     {selectedCols.length === 0 && (
-                      <Icon name="check" size={12} className="shrink-0 text-brand-1" />
+                      <Icon name="check" size={12} className="shrink-0 text-text-1" />
                     )}
                   </button>
                 )}
@@ -308,8 +308,8 @@ export function ScopeSwitcher({ className = "" }: { className?: string }) {
                       <span
                         className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border border-solid transition-colors ${
                           active
-                            ? "border-brand-1 bg-brand-1 text-white"
-                            : "border-stroke-2 bg-transparent"
+                            ? "border-text-1 bg-text-1 text-surface-1"
+                            : "border-stroke-1 bg-transparent"
                         }`}
                       >
                         {active && <Icon name="check" size={9} />}
@@ -354,8 +354,8 @@ export function ScopeSwitcher({ className = "" }: { className?: string }) {
           </p>
           <p>
             <strong className="text-text-1">Collection:</strong> A sub-tenant partition inside a database.
-            For example, Slack messages might go to <code className="font-mono text-xs text-brand-1">slack</code>,
-            Jira comments to <code className="font-mono text-xs text-brand-1">jira</code>, and documents to <code className="font-mono text-xs text-brand-1">docs</code>.
+            For example, Slack messages might go to <code className="font-mono text-xs text-text-1">slack</code>,
+            Jira comments to <code className="font-mono text-xs text-text-1">jira</code>, and documents to <code className="font-mono text-xs text-text-1">docs</code>.
           </p>
           <p className="text-xs text-text-2 pt-2 border-t border-solid border-stroke-1">
             Switching scopes narrows your queries and context lists to that specific dataset.

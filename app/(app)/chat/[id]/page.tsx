@@ -38,6 +38,8 @@ import ResearchTimeline from "@/components/ResearchTimeline";
 import { LlmMissingNotice } from "@/components/AskSearchBar";
 import { ConfirmDialog, Modal } from "@/components/ui";
 import { Icon, Spinner } from "@/components/Icon";
+import { MessageActions } from "@/components/message-actions/MessageActions";
+import { ChatHeader } from "@/components/ChatHeader";
 import type { ChatMessage, SearchChunk } from "@/lib/types";
 import type { ResearchSource } from "@/lib/research/types";
 
@@ -53,7 +55,7 @@ export default function ChatPage({
     <Suspense
       fallback={
         <div className="flex h-full items-center justify-center text-fg-4">
-          <Spinner size={18} className="text-accent" />
+          <Spinner size={18} className="text-text-2" />
         </div>
       }
     >
@@ -131,64 +133,18 @@ function Markdown({
 }
 
 /**
- * Hover-revealed actions under a finished assistant answer.
- *
- * Ratings go to Hydra's /feedback endpoint, which grades *retrieval* quality
- * for the query behind this answer — so the buttons only appear once the
- * message carries the `requestId` that endpoint requires.
+ * Answer text as plain prose, for reading aloud and for quoting into a reply.
+ * Drops citation markers and the markdown syntax a voice or a quote would
+ * otherwise carry along.
  */
-function MessageActions({
-  message,
-  onCopy,
-  onRegenerate,
-  onRate,
-}: {
-  message: ChatMessage;
-  onCopy: () => void;
-  onRegenerate?: () => void;
-  onRate: (rating: "positive" | "negative") => void;
-}) {
-  const rated = message.feedback;
-  return (
-    <div className="mt-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-      <button className="icon-btn" onClick={onCopy} title="Copy answer" aria-label="Copy answer">
-        <Icon name="copy" size={13} />
-      </button>
-      {onRegenerate ? (
-        <button
-          className="icon-btn"
-          onClick={onRegenerate}
-          title="Ask again"
-          aria-label="Ask this question again"
-        >
-          <Icon name="refresh" size={13} />
-        </button>
-      ) : null}
-      {message.requestId ? (
-        <>
-          <span className="mx-1 h-3.5 w-px bg-stroke-1" aria-hidden="true" />
-          <button
-            className={cn("icon-btn", rated === "positive" && "text-good hover:text-good")}
-            onClick={() => onRate("positive")}
-            title="Good results"
-            aria-label="Rate retrieval as good"
-            aria-pressed={rated === "positive"}
-          >
-            <Icon name="thumb-up" size={13} />
-          </button>
-          <button
-            className={cn("icon-btn", rated === "negative" && "text-bad hover:text-bad")}
-            onClick={() => onRate("negative")}
-            title="Poor results"
-            aria-label="Rate retrieval as poor"
-            aria-pressed={rated === "negative"}
-          >
-            <Icon name="thumb-down" size={13} />
-          </button>
-        </>
-      ) : null}
-    </div>
-  );
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\[(\d+)\]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`#>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -222,7 +178,7 @@ function TypingDots() {
         <span
           key={i}
           aria-hidden="true"
-          className="typing-dot h-1.5 w-1.5 rounded-full bg-accent"
+          className="typing-dot h-1.5 w-1.5 rounded-full bg-text-1"
           style={{ animationDelay: `${i * 0.18}s` }}
         />
       ))}
@@ -250,6 +206,7 @@ function ChatClient({ id }: { id: string }) {
   const { config } = useAppConfig();
   const {
     getConversation,
+    createConversation,
     addMessage,
     updateMessage,
     updateConversation,
@@ -736,22 +693,73 @@ function ChatClient({ id }: { id: string }) {
     el.style.height = `${Math.min(Math.max(el.scrollHeight, 40), 116)}px`;
   }, []);
 
+  /** Quote the start of an answer into the composer and focus it. */
+  const replyTo = useCallback(
+    (content: string) => {
+      const plain = plainText(content);
+      const quote = plain.length > 160 ? `${plain.slice(0, 160).trimEnd()}…` : plain;
+      setInput(`> ${quote}\n\n`);
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+        composerGrow();
+      });
+    },
+    [composerGrow],
+  );
+
+  /**
+   * Start a new conversation holding everything up to and including this
+   * answer, so a different follow-up does not disturb the original thread.
+   */
+  const forkAt = useCallback(
+    (messageId: string) => {
+      const idx = messages.findIndex((m) => m.id === messageId);
+      if (idx < 0) return;
+      const copy = messages.slice(0, idx + 1).map((m) => ({ ...m, id: uid() }));
+      const fork = createConversation(`${conv?.title ?? "Chat"} (fork)`, copy);
+      router.push(`/chat/${fork.id}`);
+    },
+    [conv?.title, createConversation, messages, router],
+  );
+
+  // Read aloud through the browser's speech engine. One answer at a time;
+  // choosing it again, or leaving the page, stops it.
+  const [readingId, setReadingId] = useState<string | null>(null);
+  const readAloud = useCallback(
+    (messageId: string, content: string) => {
+      const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
+      if (!synth) {
+        toast.push({ kind: "error", title: "Read aloud is not supported in this browser" });
+        return;
+      }
+      synth.cancel();
+      if (readingId === messageId) {
+        setReadingId(null);
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(plainText(content));
+      utterance.onend = () => setReadingId((cur) => (cur === messageId ? null : cur));
+      utterance.onerror = utterance.onend;
+      setReadingId(messageId);
+      synth.speak(utterance);
+    },
+    [readingId, toast],
+  );
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
   const isEmpty = messages.length === 0;
 
   // Hydrating from MongoDB — show a skeleton instead of an empty chat.
   if (waitingForStore) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-line px-3">
-          <div className="flex h-8 items-center gap-1.5 rounded-sm px-2 text-[13px] text-fg-3">
-            <Icon name="chev" size={15} className="rotate-180" />
-            Back
-          </div>
-          <div className="flex-1 truncate text-[14px] font-medium text-fg">Loading…</div>
-        </div>
+        <ChatHeader title="Loading…" loading onBack={() => router.push("/ask")} />
         <div className="mx-auto flex w-full max-w-[760px] flex-1 flex-col justify-end gap-4 overflow-y-auto px-4 pb-4">
-          <div className="h-20 animate-pulse rounded-md bg-surface-3" />
-          <div className="h-14 animate-pulse rounded-md bg-surface-2" />
+          <div className="h-20 animate-pulse rounded-md bg-white/[0.04]" />
+          <div className="h-14 animate-pulse rounded-md bg-white/[0.03]" />
         </div>
       </div>
     );
@@ -759,54 +767,21 @@ function ChatClient({ id }: { id: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Top bar */}
-      <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-line px-3">
-        <button
-          onClick={() => router.push("/ask")}
-          className="flex h-8 min-w-0 items-center gap-1.5 rounded-sm px-2 text-[13px] text-fg-3 transition-colors hover:bg-bg-3 hover:text-fg"
-          aria-label="Back to Ask"
-        >
-          <Icon name="arrowRight" size={15} className="rotate-180" />
-          <span className="hidden sm:inline">Ask</span>
-        </button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-center text-[13.5px] font-semibold text-fg">
-            {conv?.title ?? "Chat"}
-          </p>
-          <p className="hidden text-center text-[11px] text-fg-4 md:block">
-            {messages.length > 0 && conv
-              ? `${messages.length} message${messages.length === 1 ? "" : "s"} · ${timeAgo(conv.updatedAt)}`
-              : "New conversation"}
-          </p>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => void copyLastAnswer()}
-            disabled={!lastAssistantContent(messages)}
-            className="flex h-8 w-8 items-center justify-center rounded-sm text-fg-4 transition-colors hover:bg-bg-3 hover:text-fg disabled:opacity-40"
-            title="Copy last answer"
-            aria-label="Copy last answer"
-          >
-            <Icon name="copy" size={15} />
-          </button>
-          <button
-            onClick={() => router.push("/ask")}
-            className="flex h-8 w-8 items-center justify-center rounded-sm text-fg-4 transition-colors hover:bg-bg-3 hover:text-fg"
-            title="New chat"
-            aria-label="New chat"
-          >
-            <Icon name="plus" size={16} />
-          </button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-sm text-fg-4 transition-colors hover:bg-bad-fill hover:text-bad"
-            title="Delete conversation"
-            aria-label="Delete conversation"
-          >
-            <Icon name="trash" size={15} />
-          </button>
-        </div>
-      </div>
+      <ChatHeader
+        title={conv?.title ?? "Chat"}
+        meta={
+          messages.length > 0 && conv
+            ? `${messages.length} message${messages.length === 1 ? "" : "s"} · ${timeAgo(conv.updatedAt)}`
+            : "New conversation"
+        }
+        running={running}
+        canCopy={Boolean(lastAssistantContent(messages))}
+        onBack={() => router.push("/ask")}
+        onRename={conv ? (title) => renameConversation(conv.id, title) : undefined}
+        onCopy={() => void copyLastAnswer()}
+        onNew={() => router.push("/ask")}
+        onDelete={() => setConfirmDelete(true)}
+      />
 
       {/* Messages */}
       <div
@@ -817,10 +792,10 @@ function ChatClient({ id }: { id: string }) {
         <div className="mx-auto w-full max-w-[760px] px-3 py-6 sm:px-6">
           {isEmpty ? (
             <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-line bg-accent-dim text-accent">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-stroke-1 bg-white/[0.04] text-text-1">
                 <Icon name="sparkles" size={22} />
               </div>
-              <h2 className="text-[16px] font-semibold text-fg">
+              <h2 className="font-pixel text-[22px] font-normal text-text-3">
                 Ask anything from your second brain
               </h2>
               <p className="mt-1 max-w-[360px] text-[13px] text-fg-3">
@@ -835,7 +810,7 @@ function ChatClient({ id }: { id: string }) {
                       setInput("");
                       void send(s);
                     }}
-                    className="rounded-full border border-line bg-bg-2 px-3 py-1.5 text-[12px] text-fg-3 transition-colors hover:border-accent-line hover:bg-accent-dim hover:text-fg"
+                    className="rounded-full border border-stroke-1 px-3 py-1.5 text-[12px] text-fg-3 transition-colors hover:border-stroke-3 hover:text-fg"
                   >
                     {s}
                   </button>
@@ -847,13 +822,13 @@ function ChatClient({ id }: { id: string }) {
               {messages.map((m) =>
                 m.role === "user" ? (
                   <div key={m.id} className="flex justify-end">
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-br-sm border border-accent-line bg-accent-tint px-3.5 py-2.5 text-[13.5px] leading-relaxed text-fg">
+                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-stroke-1 bg-white/[0.06] px-4 py-2.5 text-[13.5px] leading-relaxed text-text-3">
                       {m.content}
                     </div>
                   </div>
                 ) : (
                   <div key={m.id} className="group flex items-start gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-accent-line bg-accent-dim text-accent">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-stroke-1 bg-white/[0.04] text-text-1">
                       <Icon name="spark" size={14} />
                     </div>
                     <div
@@ -896,7 +871,7 @@ function ChatClient({ id }: { id: string }) {
                           />
                           {m.status === "streaming" ? (
                             <span
-                              className="cursor-blink ml-0.5 inline-block h-[14px] w-[7px] translate-y-[2px] rounded-[2px] bg-accent"
+                              className="cursor-blink ml-0.5 inline-block h-[14px] w-[7px] translate-y-[2px] rounded-[2px] bg-text-1"
                               aria-hidden="true"
                             />
                           ) : null}
@@ -923,14 +898,33 @@ function ChatClient({ id }: { id: string }) {
                           finished answer — never for a stopped or errored one,
                           whose content is partial. */}
                       {m.status === "done" && m.content ? (
-                        <MessageActions
-                          message={m}
-                          onCopy={() => void copyMessage(m.content)}
-                          onRegenerate={running ? undefined : () => askAgain(m.id)}
-                          onRate={(rating) =>
-                            m.requestId && rateMessage(m.id, m.requestId, rating)
-                          }
-                        />
+                        <div className="mt-2">
+                          <MessageActions
+                            text={m.content}
+                            sentAt={new Date(m.createdAt)}
+                            initialVote={
+                              m.feedback === "positive" ? "up" : m.feedback === "negative" ? "down" : null
+                            }
+                            // Ratings grade the Hydra retrieval behind this
+                            // answer, which needs the query's request id.
+                            showVotes={Boolean(m.requestId)}
+                            reading={readingId === m.id}
+                            onCopy={(text) => void copyMessage(text)}
+                            onVote={(vote) => {
+                              if (!m.requestId || !vote) return;
+                              rateMessage(m.id, m.requestId, vote === "up" ? "positive" : "negative");
+                            }}
+                            onReply={() => replyTo(m.content)}
+                            onAgain={running ? undefined : () => askAgain(m.id)}
+                            onAloud={() => readAloud(m.id, m.content)}
+                            onFork={() => forkAt(m.id)}
+                            onReport={
+                              m.requestId
+                                ? () => rateMessage(m.id, m.requestId!, "negative")
+                                : undefined
+                            }
+                          />
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -946,7 +940,7 @@ function ChatClient({ id }: { id: string }) {
       {scrolledUp ? (
         <button
           onClick={scrollToBottom}
-          className="fixed bottom-[150px] right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-accent-line bg-bg-elev text-accent shadow-xl transition-transform hover:scale-105 md:bottom-[100px]"
+          className="fixed bottom-[150px] right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-stroke-1 bg-[#141416] text-text-1 shadow-xl transition-transform hover:scale-105 md:bottom-[100px]"
           aria-label="Scroll to bottom"
         >
           <Icon name="chevDown" size={16} />
@@ -954,7 +948,7 @@ function ChatClient({ id }: { id: string }) {
       ) : null}
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-line bg-bg/95 backdrop-blur-sm">
+      <div className="shrink-0 bg-[#0a0a0b]/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-[760px] px-3 py-3 sm:px-6 min-w-0">
           {llmMissing ? (
             <LlmMissingNotice className="mb-2.5" />
@@ -976,8 +970,8 @@ function ChatClient({ id }: { id: string }) {
               className={cn(
                 "flex h-[24px] items-center gap-1.5 rounded-full border border-solid px-2.5 text-[11.5px] font-medium transition-colors",
                 webSearch
-                  ? "border-brand-1 bg-accent-tint text-accent-on-tint"
-                  : "border-stroke-1 bg-surface-3 text-text-2 hover:text-text-1",
+                  ? "border-accent-line bg-white/10 text-text-3"
+                  : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
               )}
               title={
                 webSearch
@@ -999,8 +993,8 @@ function ChatClient({ id }: { id: string }) {
               className={cn(
                 "flex h-[24px] items-center gap-1.5 rounded-full border border-solid px-2.5 text-[11.5px] font-medium transition-colors",
                 mode !== "fast"
-                  ? "border-brand-1 bg-accent-tint text-accent-on-tint"
-                  : "border-stroke-1 bg-surface-3 text-text-2 hover:text-text-1",
+                  ? "border-accent-line bg-white/10 text-text-3"
+                  : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
               )}
               title={MODE_META[mode].title}
             >
@@ -1011,7 +1005,7 @@ function ChatClient({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => setFilters(undefined)}
-                className="flex h-[24px] items-center gap-1.5 rounded-full border border-solid border-brand-1 bg-accent-tint px-2.5 text-[11.5px] font-medium text-accent-on-tint transition-colors hover:bg-accent-dim"
+                className="flex h-[24px] items-center gap-1.5 rounded-full border border-solid border-accent-line bg-white/10 px-2.5 text-[11.5px] font-medium text-text-3 transition-colors hover:bg-white/[0.14]"
                 title="Clear the metadata filters"
               >
                 <Icon name="filter" size={12} />
@@ -1022,8 +1016,8 @@ function ChatClient({ id }: { id: string }) {
           </div>
           <div
             className={cn(
-              "flex items-end gap-2 rounded-lg border border-line bg-bg-2 px-3 py-2 transition-colors",
-              "focus-within:border-accent-line focus-within:ring-4 focus-within:ring-accent-ring",
+              "flex items-end gap-2 rounded-xl border border-stroke-1 bg-white/[0.03] px-3 py-2 shadow-2xl shadow-black/60 transition-colors",
+              "focus-within:border-stroke-3 focus-within:ring-4 focus-within:ring-white/[0.06]",
               running && "opacity-60",
             )}
           >
@@ -1044,7 +1038,7 @@ function ChatClient({ id }: { id: string }) {
             {running ? (
               <button
                 onClick={stopRun}
-                className="btn shrink-0 border border-line bg-inset text-fg hover:bg-bg-3"
+                className="btn shrink-0 rounded-full border border-stroke-1 text-text-1 hover:bg-white/[0.06]"
                 aria-label="Stop generating"
               >
                 <Icon name="stop" size={14} />
@@ -1054,7 +1048,7 @@ function ChatClient({ id }: { id: string }) {
               <button
                 onClick={submit}
                 disabled={!input.trim() || running}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-white transition-colors hover:bg-accent-2 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-text-1 text-[#0a0a0b] transition-colors hover:bg-text-3 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Send"
               >
                 <Icon name="send" size={14} />
@@ -1121,7 +1115,7 @@ function ChatClient({ id }: { id: string }) {
             setRatingDraft((d) => (d ? { ...d, text: e.target.value } : d))
           }
           placeholder="What did you expect to see instead?"
-          className="w-full resize-none rounded-md border border-stroke-1 bg-surface-4 px-3 py-2 text-[13px] text-text-1 outline-none transition-[border-color,box-shadow] placeholder:text-fg-4 focus:border-brand-1 focus:ring-3 focus:ring-accent-ring"
+          className="w-full resize-none rounded-md border border-stroke-1 bg-surface-4 px-3 py-2 text-[13px] text-text-1 outline-none transition-[border-color,box-shadow] placeholder:text-fg-4 focus:border-stroke-3 focus:ring-3 focus:ring-white/[0.06]"
         />
       </Modal>
     </div>

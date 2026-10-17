@@ -24,7 +24,7 @@ export default function Error({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-lg font-medium text-text-1">Something broke</h1>
+      <h1 className="font-pixel text-[22px] font-normal text-text-3">Something broke</h1>
       <p className="max-w-sm text-sm text-text-2">
         This page hit an unexpected error. Your chats are unaffected.
       </p>
