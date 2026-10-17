@@ -5,7 +5,12 @@ export default defineConfig({
   resolve: {
     // Mirror the `@/*` path alias from tsconfig.json so tests import modules
     // exactly the way the app does.
-    alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./", import.meta.url)),
+      "server-only": fileURLToPath(
+        new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url),
+      ),
+    },
   },
   test: {
     environment: "node",

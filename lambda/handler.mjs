@@ -156,7 +156,7 @@ export const handler = async (event) => {
       }
       if (method === "DELETE") {
         const res = await col.deleteMany({ sub });
-        return json(200, { deleted: res.deletedCount ?? 0 });
+        return json(200, { persisted: true, deleted: res.deletedCount ?? 0 });
       }
       if (method === "GET") {
         const docs = await col

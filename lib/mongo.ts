@@ -266,6 +266,7 @@ export async function listChats(sub: string, limit = 200): Promise<ChatListEntry
       persisted?: boolean;
       chats?: ChatListEntry[];
     };
+    if (!res.persisted) throw new Error("Proxy listChats failed");
     return res.chats ?? [];
   }
   const col = await chats();
@@ -349,8 +350,10 @@ export async function getChat(id: string, sub: string): Promise<Conversation | n
     const res = (await proxyFetch(
       `/chats/${encodeURIComponent(id)}?sub=${encodeURIComponent(sub)}`,
     )) as {
+      persisted?: boolean;
       conversation?: Conversation | null;
     };
+    if (!res.persisted) throw new Error("Proxy getChat failed");
     return res.conversation ?? null;
   }
   const col = await chats();
@@ -483,7 +486,8 @@ export async function exportChats(sub: string): Promise<Conversation[]> {
   if (isProxyMode()) {
     const res = (await proxyFetch(
       `/chats?sub=${encodeURIComponent(sub)}&full=1`,
-    )) as { chats?: Conversation[] };
+    )) as { persisted?: boolean; chats?: Conversation[] };
+    if (!res.persisted) throw new Error("Proxy exportChats failed");
     return res.chats ?? [];
   }
   const col = await chats();
@@ -503,7 +507,10 @@ export async function deleteAllChats(sub: string): Promise<number> {
   if (isProxyMode()) {
     const res = (await proxyFetch(`/chats?sub=${encodeURIComponent(sub)}`, {
       method: "DELETE",
-    })) as { deleted?: number };
+    })) as { persisted?: boolean; deleted?: number };
+    if (!res.persisted && typeof res.deleted !== "number") {
+      throw new Error("Proxy deleteAllChats failed");
+    }
     return Number(res.deleted ?? 0);
   }
   const col = await chats();
