@@ -17,22 +17,23 @@
  *   - `GET /api/chats/data` → `200 OK` with an empty `open-glean-chats.json`
  *   - `DELETE /api/chats/data` → `200 OK` with `{ deleted: 0 }`
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const PROXY_URL = "https://proxy.example.com/prod";
-const PROXY_KEY = "test-proxy-secret";
+vi.hoisted(() => {
+  process.env.MONGODB_URI = "https://proxy.example.com/prod";
+  process.env.MONGODB_PROXY_KEY = "test-proxy-secret";
+});
+
+import {
+  deleteAllChats,
+  exportChats,
+  getChat,
+  listChats,
+} from "./mongo";
 
 describe("mongo proxy-mode failure propagation", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    process.env.MONGODB_URI = PROXY_URL;
-    process.env.MONGODB_PROXY_KEY = PROXY_KEY;
-  });
-
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.MONGODB_URI;
-    delete process.env.MONGODB_PROXY_KEY;
   });
 
   it("throws from listChats, getChat, exportChats, and deleteAllChats when the proxy returns 5xx", async () => {
@@ -46,10 +47,6 @@ describe("mongo proxy-mode failure propagation", () => {
       ),
     );
 
-    const { listChats, getChat, exportChats, deleteAllChats } = await import(
-      "./mongo"
-    );
-
     await expect(listChats("sub-1")).rejects.toThrow(/listChats/);
     await expect(getChat("chat-1", "sub-1")).rejects.toThrow(/getChat/);
     await expect(exportChats("sub-1")).rejects.toThrow(/exportChats/);
@@ -60,10 +57,6 @@ describe("mongo proxy-mode failure propagation", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockRejectedValue(new Error("connect ETIMEDOUT")),
-    );
-
-    const { listChats, getChat, exportChats, deleteAllChats } = await import(
-      "./mongo"
     );
 
     await expect(listChats("sub-1")).rejects.toThrow(/listChats/);
@@ -110,15 +103,25 @@ describe("mongo proxy-mode failure propagation", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { listChats, getChat, exportChats, deleteAllChats } = await import(
-      "./mongo"
-    );
-
     await expect(listChats("sub-1")).resolves.toHaveLength(1);
     await expect(getChat("c1", "sub-1")).resolves.toMatchObject({ id: "c1" });
     // A missing chat with persisted: true must still return null rather than throwing.
     await expect(getChat("missing", "sub-1")).resolves.toBeNull();
     await expect(exportChats("sub-1")).resolves.toHaveLength(1);
     await expect(deleteAllChats("sub-1")).resolves.toBe(3);
+  });
+
+  it("accepts a numeric deleted count from an older Lambda that omits persisted", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ deleted: 4 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(deleteAllChats("sub-1")).resolves.toBe(4);
   });
 });

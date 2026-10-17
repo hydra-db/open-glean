@@ -508,7 +508,9 @@ export async function deleteAllChats(sub: string): Promise<number> {
     const res = (await proxyFetch(`/chats?sub=${encodeURIComponent(sub)}`, {
       method: "DELETE",
     })) as { persisted?: boolean; deleted?: number };
-    if (!res.persisted) throw new Error("Proxy deleteAllChats failed");
+    if (!res.persisted && typeof res.deleted !== "number") {
+      throw new Error("Proxy deleteAllChats failed");
+    }
     return Number(res.deleted ?? 0);
   }
   const col = await chats();
