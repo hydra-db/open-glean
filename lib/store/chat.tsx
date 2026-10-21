@@ -25,6 +25,11 @@ import {
   type ReactNode,
 } from "react";
 import type { ChatMessage, Conversation } from "@/lib/types";
+import {
+  filterLocalOnly,
+  planHydrationDeletes,
+  writeFailed,
+} from "./pendingDeletes";
 import { shouldPersistPatch } from "./persistPatch";
 
 const STORAGE_KEY = "open-glean.chats.v1";
@@ -129,17 +134,6 @@ async function api(
   }
 }
 
-/**
- * True when a write did not reach the database.
- *
- * `null` is a transport failure; `{ persisted: false }` is the server telling
- * us it could not store the write. Both mean the data is not saved, and both
- * were previously thrown away.
- */
-function writeFailed(res: { persisted?: boolean } | null): boolean {
-  return res === null || res.persisted === false;
-}
-
 export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [persisted, setPersisted] = useState(false);
@@ -201,40 +195,56 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       const local = loadLocal();
       if (res?.persisted) {
         setPersisted(true);
+        // Snapshot pending deletes before any async retry clears its entry, so
+        // a fast DELETE finishing while GET /api/chats/:id is in flight can
+        // never let a deleted conversation slip through serverConvs or
+        // resurrect from localStorage via filterLocalOnly.
+        const initialPending = new Set(pendingDeletes.current);
+        const rawEntries =
+          (res as unknown as { chats?: { id: string }[] }).chats ?? [];
+        const { alreadyGone, toRetry, entriesToLoad } = planHydrationDeletes(
+          rawEntries.map((e) => e.id),
+          initialPending,
+          MAX_CONVERSATIONS,
+        );
+        if (alreadyGone.length > 0) {
+          for (const id of alreadyGone) pendingDeletes.current.delete(id);
+          savePendingDeletes(pendingDeletes.current);
+        }
         // Retry any delete that never confirmed, so a chat the user removed
         // during an outage does not come back on recovery.
-        for (const id of [...pendingDeletes.current]) {
+        for (const id of toRetry) {
           void enqueue(id, async () => {
-            try {
-              await api(`/${id}`, { method: "DELETE" });
+            const delRes = await api(`/${id}`, { method: "DELETE" });
+            if (!writeFailed(delRes)) {
               pendingDeletes.current.delete(id);
               savePendingDeletes(pendingDeletes.current);
-            } catch {
-              /* stays pending; retried next load */
             }
           });
         }
         // Merge: server list wins on id collisions (it has the full messages);
         // purely-local conversations are kept so nothing vanishes.
         const server = await Promise.all(
-          (await Promise.all(
-            ((res as unknown as { chats?: { id: string }[] }).chats ?? []).map(
-              async (entry) => {
-                const full = await api(`/${entry.id}`);
-                return (full as unknown as { conversation?: Conversation })?.conversation ?? null;
-              },
-            ),
-          )),
+          entriesToLoad.map(async (entryId) => {
+            const full = await api(`/${entryId}`);
+            return (full as unknown as { conversation?: Conversation })?.conversation ?? null;
+          }),
         );
+        const excluded = new Set([
+          ...initialPending,
+          ...pendingDeletes.current,
+        ]);
         const serverConvs = server.filter(
-          (c): c is Conversation => c !== null && !pendingDeletes.current.has(c.id),
+          (c): c is Conversation => c !== null && !excluded.has(c.id),
         );
         serverConvs.forEach((c) => serverIds.current.add(c.id));
-        const localOnly = local.filter((c) => !serverIds.current.has(c.id));
+        const localOnly = filterLocalOnly(local, serverIds.current, excluded);
         setConversations(
           [...serverConvs, ...localOnly].sort((a, b) => b.updatedAt - a.updatedAt),
         );
-        if (localOnly.length) saveLocal(localOnly);
+        if (localOnly.length > 0 || localOnly.length !== local.length) {
+          saveLocal(localOnly);
+        }
       } else {
         localMode.current = true;
         setConversations(local);
@@ -360,6 +370,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const deleteConversation = useCallback((id: string) => {
     setConversations((prev) => prev.filter((c) => c.id !== id));
     serverIds.current.delete(id);
+    saveLocal(loadLocal().filter((c) => c.id !== id));
     if (!localMode.current) {
       // Record the delete as pending and persist it. If the DELETE fails (an
       // outage mid-session), the row survives on the server and would be
@@ -368,18 +379,16 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       pendingDeletes.current.add(id);
       savePendingDeletes(pendingDeletes.current);
       void enqueue(id, async () => {
-        try {
-          await api(`/${id}`, { method: "DELETE" });
-          pendingDeletes.current.delete(id);
-          savePendingDeletes(pendingDeletes.current);
-        } catch {
+        const res = await api(`/${id}`, { method: "DELETE" });
+        if (writeFailed(res)) {
           // Keep it pending; the next load retries and filters it out. Flag the
           // outage so the user knows the deletion has not reached the server.
           setSaveFailed(true);
+          return;
         }
+        pendingDeletes.current.delete(id);
+        savePendingDeletes(pendingDeletes.current);
       });
-    } else {
-      saveLocal(loadLocal().filter((c) => c.id !== id));
     }
   }, [enqueue]);
 
