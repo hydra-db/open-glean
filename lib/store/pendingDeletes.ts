@@ -61,12 +61,10 @@ export function planHydrationDeletes(
   const alreadyGone: string[] = [];
   const toRetry: string[] = [];
 
-  for (const id of pendingDeletes) {
-    if (serverSet.has(id) || !listIsComplete) {
-      toRetry.push(id);
-    } else {
-      alreadyGone.push(id);
-    }
+  for (const pendingId of pendingDeletes) {
+    const bucket =
+      serverSet.has(pendingId) || !listIsComplete ? toRetry : alreadyGone;
+    bucket.push(pendingId);
   }
 
   const entriesToLoad = serverEntryIds.filter((id) => !pendingDeletes.has(id));
