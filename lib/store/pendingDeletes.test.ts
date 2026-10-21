@@ -70,6 +70,22 @@ describe("planHydrationDeletes", () => {
     expect(plan.toRetry).toEqual(["c1"]);
     expect(plan.entriesToLoad).toEqual([]);
   });
+
+  it("retries off-page pending deletes when the server list hits the 200-entry cap", () => {
+    // listChats returns only the newest 200 chats. When all 200 slots are full,
+    // an older pending-delete chat may still exist on the server beyond the
+    // first page and must be retried rather than marked alreadyGone.
+    const fullPage = Array.from({ length: 200 }, (_, i) => `c-${i}`);
+    const plan = planHydrationDeletes(
+      fullPage,
+      new Set(["c-older-than-200", "c-0"]),
+      200,
+    );
+    expect(plan.alreadyGone).toEqual([]);
+    expect(plan.toRetry).toEqual(["c-older-than-200", "c-0"]);
+    expect(plan.entriesToLoad).toHaveLength(199);
+    expect(plan.entriesToLoad).not.toContain("c-0");
+  });
 });
 
 describe("filterLocalOnly", () => {

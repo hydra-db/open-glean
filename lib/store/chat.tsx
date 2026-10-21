@@ -195,11 +195,17 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       const local = loadLocal();
       if (res?.persisted) {
         setPersisted(true);
+        // Snapshot pending deletes before any async retry clears its entry, so
+        // a fast DELETE finishing while GET /api/chats/:id is in flight can
+        // never let a deleted conversation slip through serverConvs or
+        // resurrect from localStorage via filterLocalOnly.
+        const initialPending = new Set(pendingDeletes.current);
         const rawEntries =
           (res as unknown as { chats?: { id: string }[] }).chats ?? [];
         const { alreadyGone, toRetry, entriesToLoad } = planHydrationDeletes(
           rawEntries.map((e) => e.id),
-          pendingDeletes.current,
+          initialPending,
+          MAX_CONVERSATIONS,
         );
         if (alreadyGone.length > 0) {
           for (const id of alreadyGone) pendingDeletes.current.delete(id);
@@ -224,19 +230,25 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
             return (full as unknown as { conversation?: Conversation })?.conversation ?? null;
           }),
         );
+        const excluded = new Set([
+          ...initialPending,
+          ...pendingDeletes.current,
+        ]);
         const serverConvs = server.filter(
-          (c): c is Conversation => c !== null && !pendingDeletes.current.has(c.id),
+          (c): c is Conversation => c !== null && !excluded.has(c.id),
         );
         serverConvs.forEach((c) => serverIds.current.add(c.id));
         const localOnly = filterLocalOnly(
           local,
           serverIds.current,
-          pendingDeletes.current,
+          excluded,
         );
         setConversations(
           [...serverConvs, ...localOnly].sort((a, b) => b.updatedAt - a.updatedAt),
         );
-        if (localOnly.length) saveLocal(localOnly);
+        if (localOnly.length > 0 || localOnly.length !== local.length) {
+          saveLocal(localOnly);
+        }
       } else {
         localMode.current = true;
         setConversations(local);
@@ -361,9 +373,9 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
 
   const deleteConversation = useCallback((id: string) => {
     setConversations((prev) => prev.filter((c) => c.id !== id));
-    const wasOnServer = serverIds.current.delete(id);
+    serverIds.current.delete(id);
     saveLocal(loadLocal().filter((c) => c.id !== id));
-    if (!localMode.current && wasOnServer) {
+    if (!localMode.current) {
       // Record the delete as pending and persist it. If the DELETE fails (an
       // outage mid-session), the row survives on the server and would be
       // reloaded on recovery — so we filter and retry it on next load until it
