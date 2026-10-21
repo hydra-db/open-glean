@@ -41,19 +41,28 @@ export interface HydrationDeletePlan {
   entriesToLoad: string[];
 }
 
+export const SERVER_LIST_LIMIT = 200;
+
 /**
  * Partition the server chat list against `pendingDeletes` at hydration time.
+ *
+ * `listChats` returns at most `listLimit` (200) entries. A pending ID absent
+ * from `serverEntryIds` is guaranteed gone on the server only when the list is
+ * shorter than `listLimit`; when the list is full, an older conversation may
+ * sit beyond page 1 and must still be retried with `DELETE`.
  */
 export function planHydrationDeletes(
   serverEntryIds: readonly string[],
   pendingDeletes: ReadonlySet<string>,
+  listLimit: number = SERVER_LIST_LIMIT,
 ): HydrationDeletePlan {
   const serverSet = new Set(serverEntryIds);
+  const listIsComplete = serverEntryIds.length < listLimit;
   const alreadyGone: string[] = [];
   const toRetry: string[] = [];
 
   for (const id of pendingDeletes) {
-    if (serverSet.has(id)) {
+    if (serverSet.has(id) || !listIsComplete) {
       toRetry.push(id);
     } else {
       alreadyGone.push(id);
