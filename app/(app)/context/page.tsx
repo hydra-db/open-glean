@@ -415,8 +415,10 @@ function MemoriesView() {
 
   // ── backend search (debounced) ──
   const debounceRef = useRef<number | null>(null);
+  const searchReqRef = useRef(0);
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const reqId = ++searchReqRef.current;
     const q = query.trim();
     if (!q) {
       setHits(undefined);
@@ -446,12 +448,14 @@ function MemoriesView() {
           // honor the multi-select here too.
           ...(single ? { collection: single } : multi ? { collections: multi } : {}),
         });
+        if (reqId !== searchReqRef.current) return;
         setHits(toHits(res));
       } catch {
+        if (reqId !== searchReqRef.current) return;
         setSearchFailed(true);
         setHits([]);
       } finally {
-        setSearching(false);
+        if (reqId === searchReqRef.current) setSearching(false);
       }
     }, 350);
     return () => {
