@@ -33,6 +33,8 @@ export interface CitationIndex {
   entries: CitationEntry[];
   /** Highest valid reference. A marker above this cannot resolve. */
   maxRef: number;
+  /** Number of deduplicated Hydra sources (offset before the first web source). */
+  hydraCount: number;
 }
 
 /**
@@ -95,6 +97,7 @@ export function buildCitationIndex(
   }
 
   const entries = [...map.values()];
+  const hydraCount = entries.length;
   // Dedup web citations by URL. The model can return the same source twice; two
   // entries would mean two ref numbers and two cards for one page.
   const seenWeb = new Set<string>();
@@ -113,7 +116,7 @@ export function buildCitationIndex(
     });
   });
 
-  return { entries, maxRef: entries.length };
+  return { entries, maxRef: entries.length, hydraCount };
 }
 
 /**

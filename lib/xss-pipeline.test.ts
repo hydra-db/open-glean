@@ -8,7 +8,8 @@ import { linkCitations } from "@/lib/citationMarkup";
 import { inlineMarkdown } from "@/lib/markdown";
 
 /** Full pipeline: render, then link citations. */
-const render = (s: string, maxRef = 5) => linkCitations(inlineMarkdown(s), maxRef);
+const render = (s: string, maxRef = 5, webOffset = 2) =>
+  linkCitations(inlineMarkdown(s), maxRef, webOffset);
 
 const ALLOWED = /^\/?(?:code|strong|em|a|button)\b/i;
 function unsafe(html: string): string[] {
@@ -36,6 +37,10 @@ const attacks: [string, string][] = [
   ["svg onload in bold", "**<svg onload=alert(1)>** [1]"],
   ["entity double encode", "&lt;script&gt; [1]"],
   ["unicode digits", "[١]"],
+  ["web marker attr breakout", '[Web 1" onerror="alert(1)]'],
+  ["web marker script injection", "<script>alert(1)</script> [Web 1]"],
+  ["web marker non-positive", "[Web -1] [Web 0]"],
+  ["web marker inside code and link", "`[Web 1]` and [see [Web 1]](https://x.com)"],
 ];
 
 describe("XSS after citation linking", () => {

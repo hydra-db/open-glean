@@ -19,11 +19,20 @@ const CITE_CLS =
   "cursor-pointer rounded-sm px-0.5 font-medium text-accent hover:bg-accent-tint";
 
 /**
- * @param html   answer HTML, already escaped and inline-rendered
- * @param maxRef highest citation number that has a card
+ * @param html      answer HTML, already escaped and inline-rendered
+ * @param maxRef    highest citation number that has a card
+ * @param webOffset number of Hydra source cards before the first web card, so
+ *                  `[Web k]` (emitted by models or saved in older chats) maps
+ *                  to `webOffset + k`
  */
-export function linkCitations(html: string, maxRef: number): string {
+export function linkCitations(
+  html: string,
+  maxRef: number,
+  webOffset = 0,
+): string {
   if (maxRef < 1) return html;
+  const safeOffset =
+    Number.isInteger(webOffset) && webOffset > 0 ? webOffset : 0;
 
   // Split on tags so replacement only touches text nodes, and track which
   // element we are inside. Text nodes alone are not enough: `[1]` in
@@ -48,13 +57,18 @@ export function linkCitations(html: string, maxRef: number): string {
         return segment;
       }
       if (depth > 0) return segment;
-      return segment.replace(/\[(\d{1,3})\]/g, (whole, digits: string) => {
-        const ref = Number(digits);
-        if (!Number.isInteger(ref) || ref < 1 || ref > maxRef) return whole;
-        // `ref` is a validated integer, so this attribute cannot carry
-        // attacker input.
-        return `<button type="button" data-cite="${ref}" class="${CITE_CLS}">[${ref}]</button>`;
-      });
+      return segment.replace(
+        /\[(?:(web)\s+)?(\d{1,3})\]/gi,
+        (whole, webPrefix: string | undefined, digits: string) => {
+          const num = Number(digits);
+          if (!Number.isInteger(num) || num < 1) return whole;
+          const ref = webPrefix ? safeOffset + num : num;
+          if (!Number.isInteger(ref) || ref < 1 || ref > maxRef) return whole;
+          // `ref` is a validated integer, so this attribute cannot carry
+          // attacker input.
+          return `<button type="button" data-cite="${ref}" class="${CITE_CLS}">[${ref}]</button>`;
+        },
+      );
     })
     .join("");
 }

@@ -71,11 +71,13 @@ function uid(): string {
 }
 
 /**
- * How many citations an answer has, which is the highest `[n]` that can
- * resolve. Uses the same index as the prompt and the panel.
+ * Citation bounds for an answer: the highest `[n]` that can resolve and the
+ * number of Hydra source groups preceding the first web citation. Uses the same
+ * index as the prompt and the panel.
  */
-function citationCount(m: ChatMessage): number {
-  return buildCitationIndex(m.sources ?? [], m.webCitations ?? []).maxRef;
+function citationBounds(m: ChatMessage): { maxRef: number; webOffset: number } {
+  const index = buildCitationIndex(m.sources ?? [], m.webCitations ?? []);
+  return { maxRef: index.maxRef, webOffset: index.hydraCount };
 }
 
 function lastAssistantContent(messages: ChatMessage[]): string {
@@ -102,15 +104,17 @@ function lastAssistantContent(messages: ChatMessage[]): string {
 function Markdown({
   text,
   maxRef = 0,
+  webOffset = 0,
   onCite,
 }: {
   text: string;
   maxRef?: number;
+  webOffset?: number;
   onCite?: (ref: number) => void;
 }) {
   const html = useMemo(
-    () => linkCitations(markdownToHtml(text), maxRef),
-    [text, maxRef],
+    () => linkCitations(markdownToHtml(text), maxRef, webOffset),
+    [text, maxRef, webOffset],
   );
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -877,7 +881,7 @@ function ChatClient({ id }: { id: string }) {
                         <div className="space-y-2">
                           <Markdown
                             text={m.content}
-                            maxRef={citationCount(m)}
+                            {...citationBounds(m)}
                             onCite={(ref) => setCiteFocus({ messageId: m.id, ref })}
                           />
                           <p className="flex items-start gap-1.5 rounded-sm border border-bad/30 bg-bad-fill px-2.5 py-1.5 text-[12px] text-bad">
@@ -891,7 +895,7 @@ function ChatClient({ id }: { id: string }) {
                         <>
                           <Markdown
                             text={m.content}
-                            maxRef={citationCount(m)}
+                            {...citationBounds(m)}
                             onCite={(ref) => setCiteFocus({ messageId: m.id, ref })}
                           />
                           {m.status === "streaming" ? (

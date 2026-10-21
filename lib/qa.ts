@@ -294,7 +294,7 @@ export interface RunQaResult {
   requestId?: string;
 }
 
-function buildLlmMessages(
+export function buildLlmMessages(
   opts: Pick<RunQaOpts, "query" | "conversationId" | "webSearch">,
   config: AppConfig,
   chunks: SearchChunk[],
@@ -307,13 +307,17 @@ function buildLlmMessages(
       content: `Personalisation instructions from the user: ${config.instructions.trim()}`,
     });
   }
-  const context = chunksToContext(chunks).slice(0, MAX_CONTEXT_CHARS);
+  const index = buildCitationIndex(chunks);
+  const context = renderContext(index).slice(0, MAX_CONTEXT_CHARS);
   const webSearch = Boolean(opts.webSearch);
+  const firstWebRef = index.maxRef + 1;
   const prompt = webSearch
     ? [
         "You are Open Glean, a personal second-brain assistant.",
         "Answer using the retrieved context below AND the live web results from the web-search tool.",
-        "Cite retrieved context inline as [1], [2], … and web results as [Web 1], [Web 2], ….",
+        index.maxRef > 0
+          ? `Context entries are numbered [1]${index.maxRef > 1 ? `..[${index.maxRef}]` : ""} — cite them inline as [1], [2], … and continue the same numbering for web results starting at [${firstWebRef}] ([${firstWebRef}], [${firstWebRef + 1}], …).`
+          : "Cite web results inline in order of appearance as [1], [2], ….",
         "If the retrieved context is empty, rely on the web-search results.",
         "Use short paragraphs and light markdown.",
         context

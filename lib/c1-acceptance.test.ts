@@ -2,7 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { buildCitationIndex, renderContext } from "@/lib/citations";
 import { linkCitations } from "@/lib/citationMarkup";
-import type { SearchChunk } from "@/lib/types";
+import { buildLlmMessages } from "@/lib/qa";
+import type { AppConfig, SearchChunk, WebCitation } from "@/lib/types";
 
 const c = (id: string, body: string) =>
   ({ source_id: id, source_title: `Doc ${id}`, chunk_content: body }) as SearchChunk;
@@ -30,5 +31,35 @@ describe("C1 acceptance", () => {
   it("an over-cited number stays inert rather than linking to nothing", () => {
     const index = buildCitationIndex([c("a","x")], []);
     expect(linkCitations("claim [5]", index.maxRef)).not.toContain("data-cite");
+  });
+
+  it("instructs web-search runs to continue [n] numbering after Hydra sources instead of [Web 1]", () => {
+    const chunks = [c("a", "alpha"), c("a", "alpha-2"), c("b", "beta")];
+    const msgs = buildLlmMessages(
+      { query: "latest status?", webSearch: true },
+      {} as AppConfig,
+      chunks,
+      [],
+    );
+    const systemPrompt = msgs.find((m) => m.role === "system")?.content ?? "";
+    expect(systemPrompt).not.toContain("[Web 1]");
+    expect(systemPrompt).toContain("[1]..[2]");
+    expect(systemPrompt).toContain("[3]");
+  });
+
+  it("resolves both sequential [n] and fallback [Web k] to the same web source card", () => {
+    const chunks = [c("a", "alpha"), c("b", "beta")];
+    const web: WebCitation[] = [{ url: "https://example.com", title: "Example" }];
+    const index = buildCitationIndex(chunks, web);
+    expect(index.hydraCount).toBe(2);
+    expect(index.maxRef).toBe(3);
+
+    const linkedSequential = linkCitations("from [1] and [3]", index.maxRef, index.hydraCount);
+    const linkedWebPrefix = linkCitations("from [1] and [Web 1]", index.maxRef, index.hydraCount);
+    expect(linkedSequential).toContain('data-cite="3"');
+    expect(linkedSequential).toContain(">[3]</button>");
+    expect(linkedWebPrefix).toContain('data-cite="3"');
+    expect(linkedWebPrefix).toContain(">[3]</button>");
+    expect(linkedWebPrefix).toBe(linkedSequential);
   });
 });

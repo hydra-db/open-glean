@@ -71,4 +71,26 @@ describe("linkCitations", () => {
     const out = linkCitations('&quot;onerror=x [1]', 2);
     expect(out).not.toMatch(/<[^>]*\sonerror\s*=/i);
   });
+
+  it("maps [Web k] markers to webOffset + k so they match SourcesPanel cards", () => {
+    // 2 Hydra source cards (1, 2) + 2 web source cards (3, 4).
+    const out = linkCitations("context [1] and live [Web 1] plus [web 2]", 4, 2);
+    expect(out).toContain('data-cite="1"');
+    expect(out).toContain('data-cite="3"');
+    expect(out).toContain(">[3]</button>");
+    expect(out).toContain('data-cite="4"');
+    expect(out).toContain(">[4]</button>");
+  });
+
+  it("leaves [Web k] as plain text when webOffset + k exceeds maxRef", () => {
+    // 2 Hydra sources, 0 web sources (maxRef = 2, webOffset = 2).
+    const out = linkCitations("hallucinated [Web 1]", 2, 2);
+    expect(out).not.toContain("data-cite");
+    expect(out).toBe("hallucinated [Web 1]");
+  });
+
+  it("does not link [Web k] inside code spans or anchors", () => {
+    const rendered = '<code class="c">[Web 1]</code> <a href="https://x.com">[Web 1]</a>';
+    expect(linkCitations(rendered, 4, 2)).toBe(rendered);
+  });
 });
