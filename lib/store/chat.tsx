@@ -238,11 +238,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
           (c): c is Conversation => c !== null && !excluded.has(c.id),
         );
         serverConvs.forEach((c) => serverIds.current.add(c.id));
-        const localOnly = filterLocalOnly(
-          local,
-          serverIds.current,
-          excluded,
-        );
+        const localOnly = filterLocalOnly(local, serverIds.current, excluded);
         setConversations(
           [...serverConvs, ...localOnly].sort((a, b) => b.updatedAt - a.updatedAt),
         );
