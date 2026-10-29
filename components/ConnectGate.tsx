@@ -10,11 +10,13 @@
  *    change the key, switch database/collection (live, no re-verify), or
  *    disconnect.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { useAppConfig } from "@/lib/store/config";
 import { useToast } from "@/lib/toast";
 import { HydraApiError } from "@/lib/api";
-import { Field } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { SettingsFooter, SettingsRow, btn } from "@/components/ui";
+import { PixelTree } from "@/components/PixelTree";
 import { Icon, Spinner } from "@/components/Icon";
 
 interface DbOption {
@@ -92,6 +94,9 @@ export function ConnectForm({
   const [loadingCols, setLoadingCols] = useState(false);
   const [error, setError] = useState("");
   const [scopeLoading, setScopeLoading] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const keyId = useId();
+  const urlId = useId();
 
   const keyTrimmed = key.trim();
   const dbOptions = useMemo(
@@ -301,243 +306,363 @@ export function ConnectForm({
   };
 
   // ── Connected view ───────────────────────────────────────────
+  // Rows rather than a card: in Settings this sits inside a section card
+  // that already draws the border and the dividers.
   if (connected && mode === null) {
-    return (
-      <div className="w-full">
-        <div className="card space-y-3 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-success-1" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-text-1">Connected</p>
-                {config.keyFromEnv ? (
-                  <p className="truncate text-xs text-text-2">
-                    Using this deployment&apos;s shared key
-                  </p>
-                ) : (
-                  <p className="truncate font-mono text-xs text-text-2">
-                    {config.keyMask ?? (config.apiKey ? maskKey(config.apiKey) : "")}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between rounded-md border border-solid border-stroke-1 bg-surface-2 px-3 py-2.5">
-            <div className="flex min-w-0 items-center gap-2 text-sm text-text-2">
-              <Icon name="database" size={15} className="shrink-0 text-brand-1" />
-              <span className="truncate font-mono">
-                {config.database ?? "No database selected"}
-                {config.collection ? ` / ${config.collection}` : ""}
+    const scope = config.database
+      ? `${config.database}${config.collection ? ` / ${config.collection}` : ""}`
+      : "No database selected";
+    const rows = (
+      <>
+        <SettingsRow
+          label={
+            <span className="flex items-center gap-2">
+              <span aria-hidden className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-1 opacity-40 motion-reduce:animate-none" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success-1" />
               </span>
-            </div>
-            <button
-              onClick={() => void openScopePicker()}
-              className="btn-ghost h-8 shrink-0 !px-3 text-xs"
-            >
-              Switch
-            </button>
-          </div>
-
-          {config.keyFromEnv ? (
-            // The key comes from the deployment environment. There is nothing to
-            // change or disconnect from the browser, so hide those actions
-            // instead of offering buttons that only report they cannot work.
-            <p className="text-xs leading-relaxed text-fg-4">
-              This deployment supplies the key from its server environment. It
-              cannot be changed or disconnected here.
-            </p>
-          ) : (
+              Connected
+            </span>
+          }
+          description={
+            config.keyFromEnv ? (
+              "Using this deployment's shared key"
+            ) : (
+              <span className="font-mono text-[12px]">
+                {config.keyMask ?? (config.apiKey ? maskKey(config.apiKey) : "")}
+              </span>
+            )
+          }
+        >
+          {config.keyFromEnv ? null : (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <button className="btn-soft h-9 text-sm" onClick={startEdit}>
-                  <Icon name="key" size={14} /> Change API key
-                </button>
-                <button
-                  onClick={disconnect}
-                  className="btn-ghost h-9 text-sm hover:!text-error-1"
-                >
-                  <Icon name="logout" size={14} /> Disconnect
-                </button>
-              </div>
-              <p className="text-xs leading-relaxed text-fg-4">
-                Your key is stored in an encrypted session cookie on the server,
-                not in this browser, and is sent only to Hydra.
-              </p>
+              <button className={btn.secondary} onClick={startEdit}>
+                <Icon name="key" size={13} />
+                Change key
+              </button>
+              <button className={btn.ghost} onClick={disconnect}>
+                Disconnect
+              </button>
             </>
           )}
-        </div>
+        </SettingsRow>
 
-        {mode === "scope" ? null : null}
+        <SettingsRow
+          label="Database"
+          description={<span className="font-mono text-[12px]">{scope}</span>}
+        >
+          <button className={btn.secondary} onClick={() => void openScopePicker()}>
+            <Icon name="refresh" size={13} />
+            Switch
+          </button>
+        </SettingsRow>
+
+        <SettingsFooter
+          note={
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="lock" size={12} className="shrink-0" />
+              {config.keyFromEnv
+                ? "This deployment supplies the key from its server environment, so it can't be changed here."
+                : "Stored encrypted on the server, never in this browser, and sent only to Hydra."}
+            </span>
+          }
+        />
+      </>
+    );
+    return compact ? (
+      rows
+    ) : (
+      <div className="w-full divide-y divide-solid divide-stroke-1 overflow-hidden rounded-xl border border-solid border-stroke-1 bg-surface-4">
+        {rows}
       </div>
     );
   }
 
   // ── Editing / scope-picker view ──────────────────────────────
   const isScopeMode = mode === "scope";
+  const picking = databases.length > 0;
+  const chosenLabel = dbOptions.find((d) => d.tenant_id === database)?.label ?? database;
+  const full = !compact && mode === "edit" && !connected;
+  // The main action. Crisp corners like hydradb.com's buttons rather than the
+  // app's pills, solid white when ready, and a quiet outline while it can't be
+  // pressed yet, instead of a washed-out grey slab.
+  const cta = cn(
+    "group/cta flex h-11 w-full items-center justify-center gap-2 rounded-md text-[14px] font-medium transition-colors",
+    "bg-text-1 text-surface-1 hover:bg-white",
+    "disabled:pointer-events-none disabled:border disabled:border-solid disabled:border-stroke-1 disabled:bg-white/[0.03] disabled:text-fg-4",
+  );
+  const arrow = (
+    <Icon name="arrowRight" size={14} className="transition-transform duration-200 group-hover/cta:translate-x-0.5" />
+  );
+
+  // One form, so Enter submits: it verifies the key first, then confirms the
+  // chosen database once the list is showing.
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isScopeMode) return;
+    if (picking) {
+      if (database) save();
+    } else if (keyTrimmed && !verifying) {
+      void verify();
+    }
+  };
 
   return (
     <div className="w-full">
-      {!compact && mode === "edit" && !connected ? (
+      {full ? (
         <div className="mb-6 flex flex-col items-center text-center">
-          <img
-            src="/static/images/logos/hydradb-white.png"
-            alt="Hydra DB"
-            className="h-9 w-auto"
-          />
-          <h1 className="mt-4 text-2xl font-bold tracking-tight text-text-1">
+          <img src="/hydra-mark.png" alt="" className="h-9 w-9" />
+          <h1 className="mt-5 font-pixel text-[30px] font-normal leading-tight text-text-3">
             Connect your Hydra DB
           </h1>
-          <p className="mt-1.5 max-w-[360px] text-sm text-text-2">
-            Add your API key to ask questions across your notes, files, and
-            connected apps.
+          <p className="mt-2 max-w-[340px] text-[14px] leading-relaxed text-text-2">
+            Ask questions across your notes, files, and connected apps, answered
+            from your own context.
           </p>
         </div>
       ) : null}
 
-      <div className="card space-y-4 p-4">
+      <form
+        onSubmit={onSubmit}
+        className={cn(
+          "space-y-5",
+          compact
+            ? "p-4"
+            : "rounded-2xl border border-solid border-stroke-1 bg-surface-4/85 p-5 shadow-2xl shadow-black/60 backdrop-blur-md",
+        )}
+      >
         {isScopeMode ? (
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-text-1">Switch database</p>
+            <p className="text-[13px] font-medium text-text-1">Switch database</p>
             <button
+              type="button"
               onClick={() => setMode(null)}
-              className="text-fg-4 transition-colors hover:text-fg"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-fg-4 transition-colors hover:bg-white/[0.06] hover:text-text-1"
               aria-label="Close"
             >
-              <Icon name="x" size={15} />
+              <Icon name="x" size={14} />
             </button>
           </div>
-        ) : (
-          <Field
-            label="Hydra DB API key"
-            hint="Create one at app.hydradb.com/keys. Use any key with access to your database."
-          >
-            <input
-              className="input font-mono text-xs"
-              type="password"
-              placeholder="sk_live_…"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              autoComplete="off"
-            />
-          </Field>
-        )}
+        ) : !picking ? (
+          <>
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor={keyId} className="text-[12.5px] font-medium text-text-1">
+                  API key
+                </label>
+                <a
+                  href="https://app.hydradb.com/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[12px] text-fg-3 transition-colors hover:text-text-1"
+                >
+                  Get a key
+                  <Icon name="external" size={11} />
+                </a>
+              </div>
+              <div className="relative">
+                <Icon
+                  name="key"
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-4"
+                />
+                <input
+                  id={keyId}
+                  className="input h-11 pl-9 pr-10 font-mono text-[13px]"
+                  type={showKey ? "text" : "password"}
+                  placeholder="sk_live_…"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  autoFocus={full}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((v) => !v)}
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-fg-4 transition-colors hover:text-text-1"
+                  aria-label={showKey ? "Hide API key" : "Show API key"}
+                >
+                  <Icon name={showKey ? "eyeOff" : "eye"} size={15} />
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11.5px] text-fg-4">
+                Any key with access to the database you want to search.
+              </p>
+            </div>
 
-        {!isScopeMode ? (
-          <Field label="Base URL (optional)" hint="Defaults to https://api.hydradb.com">
-            <input
-              className="input font-mono text-xs"
-              type="text"
-              placeholder="https://api.hydradb.com"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-            />
-          </Field>
+            <div>
+              <label htmlFor={urlId} className="mb-1.5 flex items-center gap-1.5 text-[12.5px] font-medium text-text-1">
+                Base URL <span className="font-normal text-fg-4">optional</span>
+              </label>
+              <input
+                id={urlId}
+                className="input h-11 font-mono text-[12.5px]"
+                type="text"
+                placeholder="https://api.hydradb.com"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <p className="mt-1.5 text-[11.5px] text-fg-4">
+                Leave empty for api.hydradb.com.
+              </p>
+            </div>
+
+            <button type="submit" className={cta} disabled={!keyTrimmed || verifying}>
+              {verifying ? (
+                <>
+                  <Spinner size={14} /> Verifying key…
+                </>
+              ) : (
+                <>
+                  Connect HydraDB {arrow}
+                </>
+              )}
+            </button>
+          </>
         ) : null}
 
         {isScopeMode ? (
-          <button className="btn-soft w-full" onClick={() => void openScopePicker()} disabled={scopeLoading}>
+          <button
+            type="button"
+            className={cn(btn.secondary, "w-full")}
+            onClick={() => void openScopePicker()}
+            disabled={scopeLoading}
+          >
             {scopeLoading ? <Spinner size={13} /> : <Icon name="refresh" size={13} />}
             Refresh databases
           </button>
-        ) : (
-          <button className="btn-primary w-full" onClick={() => void verify()} disabled={!keyTrimmed || verifying}>
-            {verifying ? <Spinner size={14} /> : <Icon name="bolt" size={14} />}
-            {verifying ? "Verifying…" : "Verify & continue"}
-          </button>
-        )}
+        ) : null}
 
         {error ? (
-          <p className="flex items-start gap-1.5 rounded-md border border-solid border-error-1/30 bg-bad-fill px-3 py-2 text-xs text-error-1">
+          <p className="flex items-start gap-2 rounded-lg border border-solid border-bad/30 bg-bad-fill px-3 py-2.5 text-[12.5px] text-bad">
             <Icon name="alert" size={13} className="mt-0.5 shrink-0" />
             {error}
           </p>
         ) : null}
 
-        {databases.length > 0 ? (
-          <div className="space-y-3 animate-fadeIn">
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-text-2">
-                Database{dbOptions.length > 1 ? "s" : ""} on this key
-              </p>
-              <div className="max-h-[180px] space-y-1.5 overflow-y-auto pr-0.5">
-                {dbOptions.map((db) => (
-                  <button
-                    key={db.tenant_id}
-                    onClick={() => {
-                      setDatabase(db.tenant_id);
-                      setCollection("");
-                      void loadCols(db.tenant_id);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-md border border-solid px-3 py-2.5 text-left transition-colors ${
-                      database === db.tenant_id
-                        ? "border-brand-1 bg-accent-tint text-text-1"
-                        : "border-stroke-1 bg-surface-2 text-text-2 hover:border-stroke-2"
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2 text-sm">
-                      <Icon name="database" size={14} className="shrink-0 text-brand-1" />
-                      <span className="truncate font-mono text-[13px]">{db.label}</span>
-                    </span>
-                    {database === db.tenant_id ? (
-                      <Icon name="check" size={14} className="shrink-0 text-brand-1" />
-                    ) : null}
-                  </button>
-                ))}
+        {picking ? (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[12.5px] font-medium text-text-1">Choose a database</p>
+                <span className="text-[11.5px] text-fg-4">{dbOptions.length} on this key</span>
+              </div>
+              <div
+                role="radiogroup"
+                aria-label="Database"
+                className="max-h-[208px] divide-y divide-solid divide-stroke-1 overflow-y-auto rounded-xl border border-solid border-stroke-1"
+              >
+                {dbOptions.map((db) => {
+                  const selected = database === db.tenant_id;
+                  return (
+                    <button
+                      key={db.tenant_id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => {
+                        setDatabase(db.tenant_id);
+                        setCollection("");
+                        void loadCols(db.tenant_id);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors",
+                        selected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-solid",
+                          selected ? "border-text-1" : "border-stroke-3",
+                        )}
+                      >
+                        {selected ? <span className="h-2 w-2 rounded-full bg-text-1" /> : null}
+                      </span>
+                      <Icon name="database" size={14} className="shrink-0 text-fg-3" />
+                      <span className={cn("truncate font-mono text-[13px]", selected ? "text-text-3" : "text-text-2")}>
+                        {db.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {database && collections.length > 0 ? (
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-text-2">
-                  Collection (optional)
-                  {loadingCols ? <Spinner size={10} className="ml-2 inline" /> : null}
+              <div className="space-y-2">
+                <p className="flex items-center gap-2 text-[12.5px] font-medium text-text-1">
+                  Collection <span className="font-normal text-fg-4">optional</span>
+                  {loadingCols ? <Spinner size={10} /> : null}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setCollection("")}
-                    className={`rounded-md border border-solid px-2.5 py-1.5 text-xs transition-colors ${
-                      collection === ""
-                        ? "border-brand-1 bg-accent-tint text-text-1"
-                        : "border-stroke-1 bg-surface-2 text-text-2 hover:border-stroke-2"
-                    }`}
-                  >
-                    All collections
-                  </button>
-                  {collections.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setCollection(c)}
-                      className={`max-w-full truncate rounded-md border border-solid px-2.5 py-1.5 font-mono text-xs transition-colors ${
-                        collection === c
-                          ? "border-brand-1 bg-accent-tint text-text-1"
-                          : "border-stroke-1 bg-surface-2 text-text-2 hover:border-stroke-2"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+                  {["", ...collections].map((c) => {
+                    const selected = collection === c;
+                    return (
+                      <button
+                        key={c || "__all"}
+                        type="button"
+                        onClick={() => setCollection(c)}
+                        className={cn(
+                          "max-w-full truncate rounded-full border border-solid px-3 py-1 text-[12px] transition-colors",
+                          c ? "font-mono" : "",
+                          selected
+                            ? "border-accent-line bg-accent-tint text-text-3"
+                            : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
+                        )}
+                      >
+                        {c || "All collections"}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
 
-            <button className="btn-primary w-full" onClick={save} disabled={!database}>
-              <Icon name="check" size={14} />
-              {database
-                ? `Use ${dbOptions.find((d) => d.tenant_id === database)?.label ?? database}`
-                : "Select a database"}
+            <button type="submit" className={cta} disabled={!database}>
+              {database ? (
+                <>
+                  Continue with <span className="truncate font-mono">{chosenLabel}</span>
+                  {arrow}
+                </>
+              ) : (
+                "Select a database"
+              )}
             </button>
           </div>
         ) : null}
-      </div>
+
+        {!isScopeMode && !compact ? (
+          <p className="flex items-center justify-center gap-1.5 text-[11.5px] text-fg-4">
+            <Icon name="lock" size={11} className="shrink-0" />
+            Encrypted on the server · never stored in your browser
+          </p>
+        ) : null}
+      </form>
+
+      {full ? (
+        <p className="mt-5 text-center text-[12.5px] text-fg-3">
+          New to HydraDB?{" "}
+          <a
+            href="https://app.hydradb.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-text-1 underline decoration-white/30 underline-offset-2 transition-colors hover:decoration-white/70"
+          >
+            Create a free account
+          </a>
+        </p>
+      ) : null}
 
       {connected ? (
-        <button
-          onClick={() => setMode(null)}
-          className="mt-3 w-full text-center text-xs text-fg-4 transition-colors hover:text-fg"
-        >
-          Cancel
-        </button>
+        <div className={compact ? "flex justify-end px-4 pb-4" : "mt-3 flex justify-center"}>
+          <button type="button" onClick={() => setMode(null)} className={btn.ghost}>
+            Cancel
+          </button>
+        </div>
       ) : null}
     </div>
   );
@@ -545,11 +670,15 @@ export function ConnectForm({
 
 export function ConnectGate() {
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="relative h-full overflow-y-auto">
+      {/* The tree grows behind the lower part of the page and fades out
+          before it reaches the form, so it frames the card without sitting
+          under the text. */}
+      <PixelTree className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%] w-full [mask-image:linear-gradient(to_top,#000_55%,transparent)]" />
       {/* The form must be width-constrained here: it renders full-bleed
           otherwise, so on a wide screen the card stretched edge-to-edge while
           the heading above it stayed in a narrow column. */}
-      <div className="mx-auto flex min-h-full w-full max-w-[420px] flex-col justify-center px-5 py-10">
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-[420px] flex-col justify-center px-5 py-10">
         <ConnectForm />
       </div>
     </div>

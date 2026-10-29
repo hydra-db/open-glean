@@ -1,17 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { reportEnv } from "@/lib/env";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistPixelSquare } from "geist/font/pixel";
 import { StoreProvider } from "@/lib/store/config";
 import { ChatStoreProvider } from "@/lib/store/chat";
 import { ToastProvider } from "@/lib/toast";
 import { ThemeBoot } from "@/components/ThemeBoot";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Open Glean, your second brain on Hydra DB",
@@ -31,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#101010",
+  themeColor: "#0a0a0b",
   width: "device-width",
   initialScale: 1,
   // No maximumScale: capping it blocked pinch-zoom on iOS and Android, which
@@ -47,7 +42,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" data-theme="dark" className={`${GeistSans.variable} ${GeistPixelSquare.variable}`}
+      suppressHydrationWarning>
       <body className="font-sans">
         <StoreProvider>
           <ChatStoreProvider>

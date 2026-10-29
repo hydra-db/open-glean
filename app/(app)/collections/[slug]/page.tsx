@@ -61,7 +61,7 @@ export default function CollectionPage({
             <Icon name="folder" size={18} />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-mono text-[24px] font-bold tracking-tight text-fg">
+            <h1 className="truncate font-pixel text-[26px] font-normal leading-tight text-text-3">
               {slug}
             </h1>
             <p className="text-[12px] text-fg-4">
@@ -221,7 +221,7 @@ function AskPane({ slug, database }: { slug: string; database: string }) {
             }}
             placeholder={`Ask within "${slug}"…`}
             rows={3}
-            className="min-h-[72px] flex-1 resize-none rounded-sm border border-line bg-bg-2 px-3 py-2.5 text-[13px] text-fg placeholder:text-fg-4 outline-none transition-[border-color,box-shadow] focus:border-accent-line focus:shadow-[0_0_0_3px_var(--accent-ring)]"
+            className="min-h-[72px] flex-1 resize-none rounded-sm border border-line bg-bg-2 px-3 py-2.5 text-[13px] text-fg placeholder:text-fg-4 outline-none transition-[border-color,box-shadow] focus:border-stroke-3 focus:shadow-[0_0_0_3px_var(--accent-ring)]"
           />
           <button
             className="btn-primary shrink-0"

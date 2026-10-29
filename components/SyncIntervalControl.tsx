@@ -71,7 +71,7 @@ export function SyncIntervalControl({
             className={cn(
               "rounded-full border border-solid px-2.5 py-1 text-[11.5px] font-medium transition-colors",
               value === preset.seconds
-                ? "border-brand-1 bg-accent-tint text-brand-1"
+                ? "border-accent-line bg-accent-tint text-text-1"
                 : "border-stroke-1 bg-surface-3 text-text-2 hover:text-text-1",
             )}
             disabled={disabled || pending !== null}

@@ -68,7 +68,7 @@ export function LlmMissingNotice({ className = "" }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-start gap-2.5 rounded-md border border-warn/40 bg-warn-fill px-3.5 py-2.5",
+        "flex items-start gap-2.5 rounded-md border border-warn/30 bg-warn-fill px-3.5 py-2.5",
         className,
       )}
     >
@@ -100,8 +100,8 @@ export function Greeting({ className = "" }: { className?: string }) {
   return (
     <h1
       className={cn(
-        "text-center font-semibold tracking-tight text-text-1 text-balance",
-        "text-[1.625rem] leading-tight sm:text-[2rem] md:text-[2.5rem]",
+        "text-center font-pixel font-normal text-text-3 text-balance",
+        "text-[1.75rem] leading-tight sm:text-[2.25rem] md:text-[2.75rem]",
         "transition-opacity duration-200",
         index === null ? "opacity-0" : "opacity-100",
         className,
@@ -256,7 +256,7 @@ export default function AskSearchBar({
   }, [mode]);
   useEffect(() => {
     measureMode();
-    // Re-measure after the web font loads and on resize: Inter swaps in after
+    // Re-measure after the web font loads and on resize: Geist swaps in after
     // first paint (font-display: swap) and changes the label widths, so a
     // measure taken in the fallback font would leave the indicator misaligned.
     const onResize = () => measureMode();
@@ -309,8 +309,8 @@ export default function AskSearchBar({
 
       <div
         className={cn(
-          "relative isolate flex flex-col rounded-xl border border-solid border-stroke-1 bg-surface-2 shadow-2xl shadow-black/40 transition-all",
-          "focus-within:border-brand-1 focus-within:ring-4 focus-within:ring-accent-ring",
+          "relative isolate flex flex-col rounded-xl border border-solid border-stroke-1 bg-white/[0.03] shadow-2xl shadow-black/60 transition-all",
+          "focus-within:border-stroke-3 focus-within:ring-4 focus-within:ring-white/[0.06]",
           disabled && "opacity-60",
         )}
       >
@@ -326,7 +326,8 @@ export default function AskSearchBar({
           className="no-focus-ring block w-full min-h-[56px] flex-1 resize-none bg-transparent px-4 pb-2 pt-3.5 text-sm text-text-1 outline-none placeholder:text-text-2 md:text-md"
         />
 
-        {/* Footer: toggles + submit */}
+        {/* Footer. Search tools on the left (what to search), answer controls on
+            the right (how to answer, then go), so the eye ends on Ask. */}
         <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-1">
           <button
             type="button"
@@ -336,67 +337,14 @@ export default function AskSearchBar({
               "flex h-[34px] items-center gap-1.5 rounded-full border border-solid px-3 text-xs font-medium",
               synced && "transition-all",
               webSearch
-                ? "border-brand-1 bg-accent-tint text-accent-on-tint"
-                : "border-stroke-1 bg-surface-3 text-text-2 hover:text-text-1",
+                ? "border-accent-line bg-white/10 text-text-3"
+                : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
             )}
             title={webSearch ? "Web search on. Answers can cite live results." : "Web search off"}
           >
             <Icon name="globe" size={12} />
             Web
           </button>
-
-          {/* Divider so the Web toggle does not read as part of the mode group,
-              since both use the same orange active fill. */}
-          <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-stroke-1" />
-
-          {/* Segmented control. All three modes are visible, and one orange
-              indicator slides to the selected mode. */}
-          <div
-            role="radiogroup"
-            aria-label="Answer depth"
-            onKeyDown={onModeKey}
-            className="relative flex h-[34px] items-center rounded-full border border-solid border-stroke-1 bg-surface-3"
-          >
-            {/* The sliding highlight, measured to the active segment. It fills
-                the full height, so the selected mode reads at the same weight as
-                the Web pill next to it. Hidden until measured. */}
-            <span
-              aria-hidden
-              className={cn(
-                "absolute inset-y-0 rounded-full border border-solid border-brand-1 bg-accent-tint ease-out",
-                modeInd.width === 0 ? "opacity-0" : "opacity-100",
-                indReady && "transition-all duration-200",
-              )}
-              style={{ left: modeInd.left, width: modeInd.width }}
-            />
-            {MODE_ORDER.map((m) => (
-              <button
-                key={m}
-                ref={(el) => {
-                  modeBtnRefs.current[m] = el;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={mode === m}
-                // Roving tabindex: only the selected radio is in the tab order;
-                // arrow keys move between them.
-                tabIndex={mode === m ? 0 : -1}
-                onClick={() => pickMode(m)}
-                title={MODE_META[m].title}
-                className={cn(
-                  "relative z-10 flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-                  mode === m ? "text-accent-on-tint" : "text-text-2 hover:text-text-1",
-                )}
-              >
-                <Icon name={MODE_META[m].icon} size={12} />
-                {MODE_META[m].label}
-              </button>
-            ))}
-          </div>
-
-          {/* Divider between the mode group and Filters, matching the one after
-              the Web toggle. */}
-          <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-stroke-1" />
 
           <button
             type="button"
@@ -405,29 +353,75 @@ export default function AskSearchBar({
             className={cn(
               "flex h-[34px] items-center gap-1.5 rounded-full border border-solid px-3 text-xs font-medium transition-all",
               activeFilterCount > 0
-                ? "border-brand-1 bg-accent-tint text-accent-on-tint"
-                : "border-stroke-1 bg-surface-3 text-text-2 hover:text-text-1",
+                ? "border-accent-line bg-white/10 text-text-3"
+                : "border-stroke-1 text-text-2 hover:border-stroke-3 hover:text-text-1",
             )}
             title="Filter by exact-match metadata key / value pairs"
           >
             <Icon name="filter" size={12} />
             Filters
             {activeFilterCount > 0 ? (
-              <span className="rounded-full bg-brand-1 px-1.5 text-[10px] font-semibold text-white">
+              <span className="rounded-full bg-text-3 px-1.5 text-[10px] font-semibold text-[#0a0a0b]">
                 {activeFilterCount}
               </span>
             ) : null}
           </button>
 
-          <button
-            type="button"
-            onClick={submit}
-            disabled={disabled || !query.trim()}
-            className="btn-primary ml-auto"
-          >
-            <Icon name="arrowRight" size={13} />
-            Ask
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            {/* Segmented control. All three modes are visible, and one indicator
+                slides to the selected mode. */}
+            <div
+              role="radiogroup"
+              aria-label="Answer depth"
+              onKeyDown={onModeKey}
+              className="relative flex h-[34px] items-center rounded-full border border-solid border-stroke-1"
+            >
+              {/* The sliding highlight, measured to the active segment. Hidden
+                  until measured. */}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-y-0 rounded-full border border-solid border-accent-line bg-white/10 ease-out",
+                  modeInd.width === 0 ? "opacity-0" : "opacity-100",
+                  indReady && "transition-all duration-200",
+                )}
+                style={{ left: modeInd.left, width: modeInd.width }}
+              />
+              {MODE_ORDER.map((m) => (
+                <button
+                  key={m}
+                  ref={(el) => {
+                    modeBtnRefs.current[m] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === m}
+                  // Roving tabindex: only the selected radio is in the tab order;
+                  // arrow keys move between them.
+                  tabIndex={mode === m ? 0 : -1}
+                  onClick={() => pickMode(m)}
+                  title={MODE_META[m].title}
+                  className={cn(
+                    "relative z-10 flex h-full items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                    mode === m ? "text-text-3" : "text-text-2 hover:text-text-1",
+                  )}
+                >
+                  <Icon name={MODE_META[m].icon} size={12} />
+                  {MODE_META[m].label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={submit}
+              disabled={disabled || !query.trim()}
+              className="flex h-[34px] items-center gap-1.5 rounded-full bg-text-1 px-4 text-xs font-medium text-[#0a0a0b] transition-colors hover:bg-text-3 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Ask
+              <Icon name="arrowRight" size={13} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -441,7 +435,7 @@ export default function AskSearchBar({
               setQuery(s);
               textareaRef.current?.focus();
             }}
-            className="max-w-full truncate rounded-full border border-solid border-stroke-1 bg-surface-4 px-3 py-1 text-[11.5px] text-text-2 transition-colors hover:border-brand-1 hover:text-text-1"
+            className="max-w-full truncate rounded-full border border-solid border-stroke-1 px-3 py-1 text-[11.5px] text-text-2 transition-colors hover:border-stroke-3 hover:text-text-1"
           >
             {s}
           </button>
@@ -453,14 +447,14 @@ export default function AskSearchBar({
       ) : null}
 
       {contextEmpty ? (
-        <div className="mt-3.5 flex animate-fadeIn items-start gap-2.5 rounded-md border border-solid border-stroke-1 bg-surface-4 px-3.5 py-2.5">
+        <div className="mt-3.5 flex animate-fadeIn items-start gap-2.5 rounded-md border border-solid border-stroke-1 bg-white/[0.02] px-3.5 py-2.5">
           <Icon name="info" size={15} className="mt-0.5 shrink-0 text-text-2" />
           <p className="text-[12.5px] leading-snug text-fg-2">
             You have not added any context yet. Answers are better with your own
             notes and files.{" "}
             <Link
               href="/context?add=1"
-              className="font-medium text-accent transition-colors hover:text-accent-2 hover:underline"
+              className="font-medium text-text-1 underline underline-offset-2 transition-colors hover:text-text-3"
             >
               Add context
             </Link>
@@ -492,7 +486,7 @@ export default function AskSearchBar({
       >
         <p className="mb-3 text-xs text-text-2">
           Exact-match key / value pairs scoped to your stored metadata (e.g.{" "}
-          <span className="font-mono text-brand-1">provider: jira</span>).
+          <span className="font-mono text-text-1">provider: jira</span>).
         </p>
         <div className="flex flex-col gap-1.5">
           {filterRows.map((row, i) => (
@@ -538,7 +532,7 @@ export default function AskSearchBar({
         <button
           type="button"
           onClick={() => setFilterRows((rows) => [...rows, { key: "", value: "" }])}
-          className="mt-2.5 flex items-center gap-1 text-xs text-text-2 transition-colors hover:text-brand-1"
+          className="mt-2.5 flex items-center gap-1 text-xs text-text-2 transition-colors hover:text-text-1"
         >
           <Icon name="plus" size={12} /> Add filter
         </button>
