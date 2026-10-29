@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * OpenRouter model picker: fetches the real model directory via our proxy,
- * lets the user search, star favourites and pick. Favourites persist locally.
+ * Model picker: fetches the model directory of the provider being configured
+ * via our proxy, lets the user search, star favourites and pick, or type any
+ * model id the directory does not list. Favourites persist locally.
  */
 import {
   useCallback,
@@ -13,7 +14,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { Icon, Spinner } from "@/components/Icon";
-import { useAppConfig } from "@/lib/store/config";
+import { customModelId } from "@/lib/modelPicker";
 
 const FAV_KEY = "open-glean.favModels";
 
@@ -47,17 +48,27 @@ export function ModelPicker({
   value,
   onChange,
   onRequestTest,
+  apiKey = "",
+  baseUrl = "",
 }: {
   value: string;
   onChange: (model: string) => void;
   onRequestTest?: () => void;
+  /**
+   * The key and base URL as typed in Settings, not the saved config. The saved
+   * key lives only in the server session, so without these the lookup carried
+   * no key and the server listed OpenRouter's models whatever the base URL was.
+   */
+  apiKey?: string;
+  baseUrl?: string;
 }) {
-  const { config } = useAppConfig();
-  const apiKey = config.llm?.apiKey ?? "";
-  const baseUrl = config.llm?.baseUrl ?? "";
-
   const [open, setOpen] = useState(false);
-  const [models, setModels] = useState<OrModel[] | null>(null);
+  // The list belongs to the provider it was fetched from. When the key or base
+  // URL changes it no longer applies, so it reads as not loaded and is fetched
+  // again; a slow response for the old provider cannot replace the new one.
+  const source = `${baseUrl.trim()}|${apiKey.trim()}`;
+  const [loaded, setLoaded] = useState<{ source: string; models: OrModel[] } | null>(null);
+  const models = loaded?.source === source ? loaded.models : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
@@ -87,13 +98,13 @@ export function ModelPicker({
         setLoading(false);
         return;
       }
-      setModels(body.data);
+      setLoaded({ source, models: body.data });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load models.");
     } finally {
       setLoading(false);
     }
-  }, [models, apiKey, baseUrl]);
+  }, [models, apiKey, baseUrl, source]);
 
   useEffect(() => {
     if (open) void load();
@@ -139,6 +150,8 @@ export function ModelPicker({
       rest: matches.filter((m) => !favorites.includes(m.id)),
     };
   }, [models, q, favorites]);
+
+  const customId = customModelId(q, models);
 
   const selectedName = useMemo(
     () => models?.find((m) => m.id === value)?.name,
@@ -199,7 +212,7 @@ export function ModelPicker({
               autoFocus
               className="flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-4"
               aria-label="Search models"
-              placeholder="Search OpenRouter models…"
+              placeholder="Search or type a model id…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -214,6 +227,22 @@ export function ModelPicker({
             ) : null}
           </div>
 
+          {/* Outside the list states so it is offered while loading and after a
+              failed lookup too: some providers have no model directory. */}
+          {customId ? (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(customId);
+                setQ("");
+                setOpen(false);
+              }}
+              className="w-full border-b border-line px-3 py-2 text-left text-[12px] text-fg-3 transition-colors hover:bg-bg-3"
+            >
+              Use custom model <span className="font-mono text-accent">{customId}</span>
+            </button>
+          ) : null}
+
           {loading && !models ? (
             <div className="flex items-center justify-center gap-2 px-3 py-6 text-[12px] text-fg-4">
               <Spinner size={13} /> Fetching models…
@@ -221,7 +250,7 @@ export function ModelPicker({
           ) : error ? (
             <div className="px-3 py-6 text-[12px] text-warn">
               {error}
-              <button className="ml-1.5 text-accent hover:underline" onClick={() => { setModels(null); void load(); }}>
+              <button className="ml-1.5 text-accent hover:underline" onClick={() => void load()}>
                 Retry
               </button>
             </div>
