@@ -11,6 +11,8 @@
 import "server-only";
 import { getSession } from "@/lib/session";
 import { assertSafeLlmUrl } from "@/lib/safeUrl";
+import { llmProvider } from "@/lib/llmProvider";
+import { anthropicComplete, openAnthropicStream } from "@/lib/anthropic";
 
 export const DEFAULT_LLM_BASE = "https://openrouter.ai/api/v1";
 
@@ -154,6 +156,9 @@ export async function complete(
   messages: LlmMessage[],
   opts: { temperature?: number; maxTokens?: number; signal?: AbortSignal } = {},
 ): Promise<string> {
+  if (llmProvider(creds.baseUrl) === "anthropic") {
+    return anthropicComplete(creds, messages, opts);
+  }
   const res = await chatCompletions(
     creds,
     {
@@ -186,6 +191,11 @@ export async function streamDeltas(
   onDelta: (text: string) => void,
   opts: { temperature?: number; maxTokens?: number; signal?: AbortSignal } = {},
 ): Promise<void> {
+  if (llmProvider(creds.baseUrl) === "anthropic") {
+    const stream = await openAnthropicStream(creds, messages, opts);
+    await stream.pump(onDelta);
+    return;
+  }
   const res = await chatCompletions(
     creds,
     {
