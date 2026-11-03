@@ -39,6 +39,7 @@ import { NextRequest } from "next/server";
 import { CITATIONS_SENTINEL } from "@/lib/constants";
 import { DONE_SENTINEL } from "@/lib/streamProtocol";
 import { resolveLlmCreds } from "@/lib/llmServer";
+import { fetchWithRetry } from "@/lib/retry";
 
 /**
  * A sentence the user can act on, from a provider error body.
@@ -200,26 +201,31 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
 
   try {
-    const upstream = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${apiKey}`,
+    // A 429/5xx before any text streams is retried with backoff; a stream
+    // that fails part-way is not, so the user never sees an answer twice.
+    const upstream = await fetchWithRetry(
+      `${base}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: true,
+          temperature: body.temperature ?? 0.4,
+          ...(body.maxTokens ? { max_tokens: body.maxTokens } : {}),
+          ...(webSearch ? { plugins: [{ id: "web", max_results: 5 }] } : {}),
+        }),
+        // Do not follow redirects: the base URL was SSRF-validated, but a
+        // redirect could point the followed request at an unvalidated internal
+        // host. A completion POST never legitimately redirects.
+        redirect: "manual",
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: true,
-        temperature: body.temperature ?? 0.4,
-        ...(body.maxTokens ? { max_tokens: body.maxTokens } : {}),
-        ...(webSearch ? { plugins: [{ id: "web", max_results: 5 }] } : {}),
-      }),
-      signal: controller.signal,
-      // Do not follow redirects: the base URL was SSRF-validated, but a
-      // redirect could point the followed request at an unvalidated internal
-      // host. A completion POST never legitimately redirects.
-      redirect: "manual",
-    });
+      { signal: controller.signal },
+    );
 
     if (upstream.type === "opaqueredirect" || (upstream.status >= 300 && upstream.status < 400)) {
       return new Response("LLM endpoint attempted a redirect, which is not allowed.", {
